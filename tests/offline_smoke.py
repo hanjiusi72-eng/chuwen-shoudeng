@@ -24,6 +24,10 @@ with sync_playwright() as p:
  for scene,data in [('Defense',{}),('Decorate',{}),('Finish',{})]:
   page.evaluate('({k,d})=>{game.scene.getScenes(true).forEach(s=>game.scene.stop(s.scene.key));game.scene.start(k,d)}',{'k':scene,'d':data});page.wait_for_function('(k)=>game.scene.isActive(k)',arg=scene);page.wait_for_timeout(650)
  checks.append('守灯、画灯、完成页均可离线进入')
+ page.evaluate('game.scene.getScenes(true).forEach(s=>game.scene.stop(s.scene.key));game.scene.start("Workshop")');page.wait_for_function('game.scene.isActive("Workshop")');page.wait_for_timeout(1000)
+ page.locator('.next').click();page.locator('[data-stamp=dragon]').click();page.locator('.next').click();page.locator('#lamp-wish').fill('灯火长明');page.locator('.next').click()
+ assert page.evaluate('game.scene.getScene("Workshop").lit && game.scene.getScene("Workshop").wish==="灯火长明"')
+ checks.append('新灯坊可离线绘纹、题写心愿并点亮')
  assert not network,network;assert not errors,errors
  checks+=['除HTML文档本身外无HTTP网络请求','无未捕获浏览器异常']
  (out/'result.json').write_text(json.dumps({'checks':checks,'network':network,'errors':errors},ensure_ascii=False,indent=2));print(json.dumps(checks,ensure_ascii=False),flush=True);b.close()

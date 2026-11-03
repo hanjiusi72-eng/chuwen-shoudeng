@@ -6,27 +6,21 @@ class CraftScene extends Phaser.Scene {
     BGM.setMode('festive');
     this.step = 0; this.frameParts = new Set(); this.busy = false;
     this.hud = hud(this, '交互 2C · 木匠家学艺', '跟着木匠，亲手扎一盏素灯');
-    // 屋内
-    const g = this.add.graphics();
-    g.fillStyle(0xffe9b8, 1); g.fillRect(0, 0, W, H);
-    g.fillStyle(0xffd27a, 1); for (let x = 0; x < W; x += 60) g.fillRect(x, 70, 30, 470);
-    g.fillStyle(0x7a3a10, 1); g.fillRect(0, 540, W, 16);
-    g.fillStyle(0xb06a2a, 1); g.fillRect(0, 556, W, H - 556);
-    g.fillStyle(0x9a5a20, 1); for (let x = 0; x < W; x += 90) g.fillRect(x, 556, 4, H - 556);
-    // 木匠
-    this.carp = this.add.image(170, H + 30, 'char_elder').setOrigin(0.5, 1); this.carp.setScale(470 / this.carp.height);
+    // 延续视频中的粉色纹样、立姿木匠与悬空制灯区。
+    this.add.image(W / 2, H / 2, 'bg_pattern').setDisplaySize(W, H);
+    this.carp = this.add.image(174, H + 25, 'char_elder').setOrigin(0.5, 1);
+    this.carp.setScale(610 / this.carp.height);
     this.stepPanel();
-    // 工作台
-    panel(this, 380, 96, 560, 600, { fill: 0xf2d9a8, stroke: C.orange, lw: 5 });
-    const mat = this.add.graphics(); mat.lineStyle(1, 0xd9b77a, 1); for (let yy = 150; yy < 690; yy += 30) mat.lineBetween(392, yy, 928, yy);
-    T(this, 660, 124, '制 作 区', 18, '#b06a2a', { bold: true });
+    const halo = this.add.image(660, 390, 'glow').setTint(C.cream).setScale(3).setAlpha(0.18);
+    this.tweens.add({ targets: halo, alpha: 0.28, duration: 2200, yoyo: true, repeat: -1 });
+    T(this, 660, 124, '一篾一纸，扎起一盏光', 24, '#fff8d0', { bold: true });
     this.LX = 660; this.LY = 400;
     this.lampG = this.add.graphics();
     this.guideG = this.add.graphics();
     this.drawLamp();
     // 材料托盘
-    panel(this, 970, 96, 346, 600, { fill: C.blue, stroke: C.cream, lw: 4 });
-    T(this, 1143, 126, '材 料 托 盘', 20, '#fbf5a2', { bold: true });
+    panel(this, 970, 96, 346, 600, { fill: C.cream, alpha: 0.90, stroke: C.magenta, lw: 3 });
+    T(this, 1143, 126, '材 料 托 盘', 20, '#9a0078', { bold: true });
     const parts = [
       { id: 'ring', key: 'part_ring', name: '竹篾圈架', step: 0, sc: 0.8 },
       { id: 'ribs', key: 'part_ribs', name: '竹篾竖骨', step: 0, sc: 0.45 },
@@ -37,7 +31,7 @@ class CraftScene extends Phaser.Scene {
     this.parts = {};
     parts.forEach((p, i) => {
       const x = i < 4 ? 1060 + (i % 2) * 168 : 1143, y = i < 4 ? 220 + Math.floor(i / 2) * 170 : 560;
-      const bg = this.add.graphics(); bg.fillStyle(0xffffff, 0.92); bg.fillRoundedRect(x - 72, y - 66, 144, 136, 14);
+      const bg = this.add.graphics(); bg.fillStyle(0xffffff, 0.48); bg.fillRoundedRect(x - 72, y - 66, 144, 136, 14);
       const c = this.add.container(x, y);
       const im = this.add.image(0, -10, p.key).setScale(p.sc);
       const nm = T(this, 0, 50, p.name, 17, '#2a1030', { bold: true });
@@ -87,7 +81,7 @@ class CraftScene extends Phaser.Scene {
       [230, 140, 50].forEach(w => g.strokeEllipse(x, y, w, 270));
     }
     if (fp.has('ring')) {
-      g.lineStyle(8, 0x1d9a78, 1); g.strokeEllipse(x, y - 128, 120, 20); g.strokeEllipse(x, y + 128, 120, 20);
+      g.lineStyle(8, 0x39b99e, 1); g.strokeEllipse(x, y - 128, 120, 20); g.strokeEllipse(x, y + 128, 120, 20);
       g.fillStyle(C.red, 1); g.fillRoundedRect(x - 60, y - 150, 120, 18, 5); g.fillRoundedRect(x - 60, y + 132, 120, 18, 5);
       g.lineStyle(3, 0x7a3a10, 1); g.lineBetween(x, y - 150, x, y - 190);
     }

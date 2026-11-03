@@ -7,7 +7,7 @@ const game = new Phaser.Game({
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
   input: { activePointers: 3 },
   render: { antialias: true, roundPixels: false },
-  scene: [BootScene, TitleScene, StoryScene, ActScene, ForageScene, MedicineScene, MarketScene, CraftScene, DefenseScene, DecorateScene, EndingScene, FinishScene]
+  scene: [BootScene, TitleScene, PrologueScene, WorkshopScene, StoryScene, ActScene, ForageScene, MedicineScene, MarketScene, CraftScene, DefenseScene, DecorateScene, EndingScene, FinishScene]
 });
 
 window.game = game;

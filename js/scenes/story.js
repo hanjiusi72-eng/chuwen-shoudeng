@@ -46,7 +46,7 @@ const STORIES = {
           const b = s.add.image(340, 300, 'book_slips').setScale(0.44).setAlpha(0); s.tweens.add({ targets: b, alpha: 1, duration: 600 });
           VT(s, 340 + 190, 175, '舒喉化骨汤', 24, '#1a0a30', { oy: 0, bold: true });
           panel(s, 640, 90, 600, 400, { fill: C.cream, stroke: C.blue, lw: 5 });
-          T(s, 940, 124, '采 购 线 索', 24, '#004dfc', { bold: true });
+          T(s, 940, 124, '随 行 物 件', 24, '#004dfc', { bold: true });
           [['herb_huoxiang', '草药', 0.5], ['bamboo', '竹篾', 1.3], ['paperstack', '棉纸', 1.2], ['jar', '灯油灯芯', 1.2]].forEach(([k, n, sc], i) => {
             const x = 720 + i * 147, y = 290;
             const im = s.add.image(x, y, k).setScale(sc).setAlpha(0);
@@ -55,7 +55,7 @@ const STORIES = {
           });
         },
         lines: [{ who: 'dragon', text: '这本药书你收好——方子都在里面，照着配，不会错。' },
-                { who: 'tiger', text: '草药、竹篾、棉纸、灯油，村口市集都有。你只管去，我们一路给你提个醒。' }] },
+                { who: 'tiger', text: '草药已齐，竹篾、棉纸、灯油也都备下了。先把药煎好，村里的人还等着呢。' }] },
       { bg: 'bg_pattern', build(s) {
           const glow = s.add.image(W / 2, 330, 'glow').setScale(2.2).setTint(0xfff3b0).setAlpha(0);
           const l = s.add.image(W / 2, 330, 'lantern_white').setScale(1.6).setAlpha(0);
@@ -70,7 +70,7 @@ const STORIES = {
         lines: [{ who: 'dragon', text: '再送你一盏素灯。灯面先空着——等村里的灯都亮起来，再好好装点它。' },
                 { who: 'tiger', text: '记住：灯光亮，锣鼓响，瘟神疫鬼就不敢近身！' }] }
     ],
-    next: ['Act', { act: 2 }]
+    next: ['Medicine', { mode: 'effects' }]
   },
   B: {
     title: '剧情 B · 灯下传艺',
@@ -158,29 +158,48 @@ const STORIES = {
         lines: [{ who: 'carp', text: '这一夜，是大家把灯守住的。这份情义，村里人一辈子记得。' },
                 { who: 'dragon', text: '在素灯上画上我们龙虎的纹样，再题一句吉语——把这一夜的光，留在灯上，也留在心里。' }] }
     ],
-    next: ['Act', { act: 4 }]
+    next: ['Workshop']
   }
 };
 
 
 /* 镜头管理：切镜时终止上一镜所有补间与定时器，并清理其对象（包括回调里后生成的对象） */
 function shotDirector(scene) {
-  const persist = new Set(scene.children.list);
-  const events = [];
+  const persist = new Set(scene.children.list), events = [];
   const add = scene.time.addEvent.bind(scene.time);
   scene.time.addEvent = cfg => { const e = add(cfg); events.push(e); return e; };
-  const cover = scene.add.rectangle(W / 2, H / 2, W, H, 0x14061c, 0).setDepth(1350);
-  persist.add(cover);
+  let busy = false, first = true, serial = 0, alive = true;
+  scene.events.once('shutdown', () => { alive = false; });
   const killDeep = o => { scene.tweens.killTweensOf(o); if (o.list) o.list.forEach(killDeep); };
+  const clean = () => scene.children.list.filter(o => !persist.has(o) && o.depth < 1100).forEach(o => { killDeep(o); o.destroy(); });
   return {
+    get busy() { return busy; },
     keep(o) { persist.add(o); return o; },
     cut(build, done) {
+      if (busy) return;
+      busy = true;
       events.splice(0).forEach(e => e.remove(false));
-      scene.tweens.add({ targets: cover, fillAlpha: 1, duration: 220, onComplete: () => {
-        scene.children.list.filter(o => !persist.has(o) && o.depth < 1100).forEach(o => { killDeep(o); o.destroy(); });
-        build();
-        scene.tweens.add({ targets: cover, fillAlpha: 0, duration: 320, onComplete: () => done && done() });
-      } });
+      let committed = false;
+      const replace = image => {
+        if (committed || !alive) return;
+        committed = true;
+        clean(); build();
+        if (!image) { busy = false; done && done(); return; }
+        const key = `shot-${scene.sys.settings.key}-${Date.now()}-${serial++}`;
+        scene.textures.addImage(key, image);
+        const still = scene.add.image(W / 2, H / 2, key).setDisplaySize(W, H).setDepth(1340);
+        persist.add(still);
+        const release = () => { persist.delete(still); still.destroy(); scene.textures.remove(key); };
+        scene.events.once('shutdown', release);
+        scene.tweens.add({ targets: still, alpha: 0, duration: 750, ease: 'Sine.inOut', onComplete: () => {
+          scene.events.off('shutdown', release); release(); busy = false; done && done();
+        } });
+      };
+      if (first) { first = false; replace(null); }
+      else {
+        try { scene.game.renderer.snapshot(replace); } catch (_) { replace(null); }
+        setTimeout(() => replace(null), 400);
+      }
     }
   };
 }
@@ -190,7 +209,7 @@ class StoryScene extends Phaser.Scene {
   init(data) { this.story = STORIES[data.id]; this.shot = -1; this.applied = false; }
   create() {
     fadeIn(this, ['dlg']);
-    BGM.setMode('festive');
+    BGM.setMode(this.story === STORIES.D ? 'reflective' : 'festive');
     this.layer = null;
     const top = this.add.container(0, 0).setDepth(1400);
     const g = this.add.graphics(); g.fillStyle(C.ink, 0.8); g.fillRoundedRect(16, 14, this.story.title.length * 22 + 36, 42, 21);
@@ -201,6 +220,7 @@ class StoryScene extends Phaser.Scene {
     this.nextShot();
   }
   nextShot() {
+    if (this.director.busy) return;
     this.shot++;
     if (this.shot >= this.story.shots.length) return this.finish();
     const S = this.story.shots[this.shot];

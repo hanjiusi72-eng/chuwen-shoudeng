@@ -203,18 +203,56 @@ function dialog(scene, lines, onDone, opt = {}) {
   return c;
 }
 
-/* 场景切换（成功条件只触发一次） */
+/* 同一页面内叠化：保留上一画面，让下一场景从它下面浮现。 */
+const SceneBlend = {
+  active: false,
+  curtain: null,
+  show(image) {
+    if (!this.curtain) {
+      this.curtain = document.createElement('div');
+      this.curtain.id = 'scene-blend';
+      this.curtain.setAttribute('aria-hidden', 'true');
+      document.body.appendChild(this.curtain);
+    }
+    const r = game.canvas.getBoundingClientRect();
+    Object.assign(this.curtain.style, {
+      left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px',
+      transition: 'none', opacity: '1', display: 'block',
+      backgroundImage: image ? `url("${image.src}")` : 'none'
+    });
+    this.active = true;
+    // 强制提交起始帧，避免浏览器把起始和终止样式合并。
+    void this.curtain.offsetWidth;
+  },
+  reveal() {
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      this.curtain.style.transition = 'opacity 850ms cubic-bezier(.25,.1,.25,1)';
+      this.curtain.style.opacity = '0';
+    }));
+    clearTimeout(this.timer);
+    this.timer = setTimeout(() => { this.curtain.style.display = 'none'; this.active = false; }, 900);
+  }
+};
 function goTo(scene, key, data) {
   if (scene._leaving) return;
   scene._leaving = true;
   scene.input.enabled = false;
-  scene.cameras.main.fadeOut(380, 20, 6, 24);
-  scene.cameras.main.once('camerafadeoutcomplete', () => scene.scene.start(key, data));
+  let started = false;
+  const change = image => {
+    if (started || !scene.sys.isActive()) return;
+    started = true;
+    SceneBlend.show(image);
+    scene.scene.start(key, data);
+    SceneBlend.reveal();
+  };
+  try { scene.game.renderer.snapshot(change); } catch (_) { change(null); }
+  // 快照不可用时仍能继续，不能让玩家停在不可点击的旧场景。
+  setTimeout(() => change(null), 400);
 }
 function fadeIn(scene, transient = []) {
   scene._leaving = false;
   transient.forEach(k => { scene[k] = undefined; });
-  scene.cameras.main.fadeIn(380, 20, 6, 24);
+  if (!SceneBlend.active) scene.cameras.main.fadeIn(650, 20, 6, 24);
 }
 
 /* 虚线圆/框 */
@@ -522,8 +560,8 @@ const BGM = (() => {
     // 换模式只在整小节边界生效：交叉淡化与乐句对齐，避免切到半句上产生拼接感
     if (inBar === 0 && pendingMode !== null) {
       mode = pendingMode; pendingMode = null;
-      dayTarget = mode === 'night' ? 0.10 : 1.0;
-      nightTarget = mode === 'night' ? 1.0 : 0.10;
+      dayTarget = mode === 'night' ? 0.10 : mode === 'reflective' ? 0.42 : 1.0;
+      nightTarget = mode === 'night' ? 1.0 : mode === 'reflective' ? 0.48 : 0.10;
       const a = AUDIO.ctx(); const now = a ? a.currentTime : t;
       if (a && day) {
         const rt = Math.max(t, now + 0.05);
@@ -612,23 +650,15 @@ const BGM = (() => {
       }
     },
     setMode(m) {
-      const want = m === 'night' ? 'night' : 'festive';
+      const want = ['night', 'reflective'].includes(m) ? m : 'festive';
       this.ensure();
       const a = AUDIO.ctx(); if (!a || !day) return;
-      if (!running) {                 // 音乐还没起：直接以目标模式启动
-        mode = want;
-        dayTarget = mode === 'night' ? 0.10 : 1.0;
-        nightTarget = mode === 'night' ? 1.0 : 0.10;
-        const t = a.currentTime;
-        day.gain.setValueAtTime(0, t); day.gain.linearRampToValueAtTime(dayTarget, t + 3);
-        night.gain.setValueAtTime(0, t); night.gain.linearRampToValueAtTime(nightTarget, t + 3);
-        return;
-      }
       if (want === mode && pendingMode === null) return;   // 同模式重复调用不重触发淡化
       if (want === pendingMode) return;
       // 记下待生效模式，由 scheduleStep 在下一个整小节边界平滑交叉淡化
       pendingMode = want;
     },
+    get snapshot() { return { running, mode, pendingMode, step, nextT, time: AUDIO.now(), day: day?.gain.value, night: night?.gain.value }; },
     setMuted(m) { AUDIO.setMuted(m); }
   };
 })();

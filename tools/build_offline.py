@@ -9,6 +9,8 @@ for f in sorted((ROOT/'assets').rglob('*')):
  if f.is_file() and f.suffix.lower() in ('.png','.jpg','.jpeg','.webp'):
   assets[f.relative_to(ROOT).as_posix()]='data:'+mimetypes.guess_type(f.name)[0]+';base64,'+base64.b64encode(f.read_bytes()).decode()
 s=(ROOT/'index.html').read_text()
+s=re.sub(r'<a class="download-link"[^>]*>.*?</a>', '', s)
+s=re.sub(r'<link rel="stylesheet" href="journey.css[^"]*">',lambda _: '<style>'+(ROOT/'journey.css').read_text()+'</style>',s)
 # The backdrop also uses a local image, so embed it directly.
 s=re.sub(r'url\((assets/[^)]+)\)',lambda m:'url('+assets[m[1].split('?')[0]]+')',s)
 loader='<script>window.__OFFLINE_ASSETS='+json.dumps(assets,separators=(',',':'))+';</script>'
@@ -24,10 +26,10 @@ def inline(m):
  if name=='lib/phaser.min.js':tag+=loader
  seen+=1;return tag
 s=re.sub(r'<script src="([^"]+)"></script>',inline,s)
-assert seen==15,seen
+assert seen==18,seen
 assert not re.search(r'<script[^>]+src=',s)
 p=out/'guangliang-offline.html';p.write_text(s)
-notes='光亮·龙虎灯｜离线交互版\n\n解压后双击 guangliang-offline.html，用 Safari 或 Chrome 打开即可游玩。\n无需安装、无需启动终端、无需联网。建议横屏。首次点击后浏览器才会播放声音。\n游戏进度仅保留在本次打开的页面中。\n\n本包是按 Word 四项意见修订的版本。\n'
+notes='光亮·龙虎灯｜离线交互版\n\n解压后双击 guangliang-offline.html，用 Safari 或 Chrome 打开即可游玩。\n无需安装、无需启动终端、无需联网。建议横屏。首次点击后浏览器才会播放声音。\n游戏进度仅保留在本次打开的页面中。\n\n本包为视频参考融合版：连续故事、纸灯绘纹、心愿题字与点亮保存。全部运行库和图片均已内嵌；首次点击后配乐开始，切换场景不会重新播放。\n'
 (out/'Mac使用说明.txt').write_text(notes)
 with zipfile.ZipFile(out/'game-offline-mac.zip','w',zipfile.ZIP_DEFLATED,compresslevel=6) as z:
  z.write(p,p.name);z.writestr('Mac使用说明.txt',notes)

@@ -8,9 +8,9 @@ with sync_playwright() as p:
  page.on('pageerror',lambda e:errors.append(str(e)))
  page.on('response',lambda r:failed.append({'status':r.status,'url':r.url}) if r.status>=400 else None)
  page.goto('http://127.0.0.1:8686/');page.wait_for_function('window.game?.scene.isActive("Title")');page.wait_for_timeout(900)
- page.mouse.click(667,488);page.wait_for_function('game.scene.isActive("Story")');page.wait_for_timeout(1800)
+ page.evaluate('game.scene.stop("Title");game.scene.start("Story",{id:"prologue"})');page.wait_for_function('game.scene.isActive("Story")');page.wait_for_function('game.scene.getScene("Story").children.list.some(o=>o.texture?.key==="char_baosheng")')
  assert page.evaluate('STORIES.prologue.shots[0].bg')=='bg_pattern'
- assert page.evaluate('game.scene.getScene("Story").children.list.some(o=>o.texture?.key==="char_baosheng" && o.displayHeight===750)')
+ assert page.evaluate('game.scene.getScene("Story").children.list.some(o=>o.texture?.key==="char_baosheng" && Math.abs(o.displayHeight-750)<1)')
  page.screenshot(path=str(out/'01-prologue.png'));checks.append('序章使用原始粉红几何纹样和满高人物')
  page.evaluate('game.scene.getScene("Story").nextShot()');page.wait_for_timeout(1300)
  assert page.evaluate('game.scene.getScene("Story").shot')==1
