@@ -1,7 +1,7 @@
-/* 除瘟守灯 · 核心：常量、全局状态、通用 UI、音效 */
+/* 光亮 · 核心：常量、全局状态、通用 UI、音效、背景音乐 */
 const W = 1334, H = 750;
-const FONT = '"Changming Hei","PingFang SC","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
-const FONT_SANS = FONT;
+const FONT = '"Heiti SC","STHeiti","SimHei","Source Han Sans SC","Noto Sans SC","Microsoft YaHei","PingFang SC",sans-serif';
+const FONT_SANS = '"Heiti SC","STHeiti","PingFang SC","Noto Sans SC","Microsoft YaHei",sans-serif';
 const TEXT_RES = Math.min(2, window.devicePixelRatio || 1) + 0.5;
 
 const C = {
@@ -16,8 +16,8 @@ const G = {
   reset() {
     Object.assign(this, {
       bookOpened: false, bookPageIndex: 0,
-      gathered: new Set(), gatherPosition: 0, gatheringDone: false,
       healedTiger: false, healedDragon: false,
+      foragePos: 0, forageGot: [],
       purchased: new Set(), effectsDone: new Set(), prepared: [],
       carpenterRescued: false, craftUnlocked: false, lampCrafted: false,
       tutorialSeen: false, tutorialSkipped: false, nightRetries: 0, assist: false,
@@ -33,7 +33,7 @@ const WHO = {
   tiger:  { name: '白额虎', head: 'head_tiger', color: C.orange },
   dragon: { name: '青龙',   head: 'head_dragon', color: C.green },
   wu:     { name: '吴夲 · 保生大帝', head: 'head_baosheng', color: C.magenta },
-  carp:   { name: '陈伯 · 木匠',   head: 'head_elder', color: C.blue },
+  carp:   { name: '木匠',   head: 'head_elder', color: C.blue },
   me:     { name: '学徒（你）', head: null, color: C.ink },
   narr:   { name: '', head: null, color: C.ink }
 };
@@ -181,7 +181,7 @@ function dialog(scene, lines, onDone, opt = {}) {
     i++;
     if (i >= lines.length) { stopTyping(); c.destroy(); onDone && onDone(); return; }
     const L = lines[i], who = WHO[L.who] || WHO.narr;
-    if (who.head && opt.portraits !== false) {
+    if (who.head) {
       head.setTexture(who.head).setVisible(true);
       const s = Math.min(150 / head.width, 140 / head.height); head.setScale(s);
       body.x = 230; body.setWordWrapWidth(W - 330);
@@ -213,7 +213,6 @@ function goTo(scene, key, data) {
 }
 function fadeIn(scene, transient = []) {
   scene._leaving = false;
-  scene.input.enabled = true;
   transient.forEach(k => { scene[k] = undefined; });
   scene.cameras.main.fadeIn(380, 20, 6, 24);
 }
@@ -260,7 +259,7 @@ const SFX = (() => {
   };
   return {
     unlock: ac,
-    toggle() { muted = !muted; BGM.setMuted(muted); return muted; },
+    toggle() { muted = !muted; return muted; },
     get muted() { return muted; },
     click() { tone(880, 0.06, 'triangle', 0.08); },
     drop() { tone(520, 0.1, 'sine', 0.14, 200); },
@@ -273,29 +272,116 @@ const SFX = (() => {
     blow() { noise(0.45, 0.12, 2200); },
     light() { tone(990, 0.1, 'sine', 0.1); tone(1480, 0.2, 'sine', 0.08, 0, 0.08); },
     rain() { noise(1.4, 0.18, 4000); },
-    dead() { tone(160, 0.5, 'triangle', 0.12, -80); }
+    dead() { tone(160, 0.5, 'triangle', 0.12, -80); },
+    step() { tone(520, 0.05, 'sine', 0.06); tone(760, 0.04, 'sine', 0.04, 0, 0.04); },
+    dice() { for (let i = 0; i < 5; i++) noise(0.06, 0.1, 2600, i * 0.09); tone(300, 0.3, 'triangle', 0.1, 160, 0.45); },
+    pick() { tone(980, 0.07, 'sine', 0.08); },
+    grind() { noise(0.28, 0.14, 900); tone(140, 0.24, 'sine', 0.1, -40); }
   };
 })();
 
-/* 原创五声音阶配乐：首次交互后播放，跨场景连续，后台自动暂停。 */
-const BGM = (() => {
-  const audio = new Audio('assets/changming-festival.mp3');
-  audio.loop = true; audio.preload = 'auto'; audio.volume = 0.32;
-  let started = false, muted = false;
-  const start = () => { started = true; if (!muted && !document.hidden) audio.play().catch(() => {}); };
-  document.addEventListener('pointerdown', start, { passive: true });
-  document.addEventListener('keydown', start);
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) audio.pause(); else if (started && !muted) start();
-  });
-  return { start, audio, setMuted(value) { muted = value; audio.muted = value; if (value) audio.pause(); else start(); } };
-})();
-
-/* 各场景共用声音开关 */
+/* 静音按钮（各场景右下角） */
 function muteButton(scene) {
-  const t = T(scene, W - 22, H - 22, SFX.muted ? '乐声 · 关' : '乐声 · 开', 16, '#fff8d0', {
-    ox: 1, sans: true, stroke: '#2a1030', strokeThickness: 4
-  }).setDepth(2000).setInteractive({ useHandCursor: true });
-  t.on('pointerup', () => t.setText(SFX.toggle() ? '乐声 · 关' : '乐声 · 开'));
+  const t = T(scene, W - 26, H - 22, SFX.muted ? '🔇' : '🔊', 22, '#fff', { ox: 1, sans: true }).setDepth(2000).setInteractive({ useHandCursor: true });
+  t.on('pointerup', () => { const m = SFX.toggle(); BGM.setMuted(m); t.setText(m ? '🔇' : '🔊'); });
   return t;
 }
+
+/* ---------------- 背景音乐（WebAudio 程序化古风乐：宫调五声 + 鼓点 + 古筝拨弦 + 笛声） ----------------
+   festive：热闹明快（标题、采药、市集、制药、扎灯、结尾）；night：低回庄严（守灯夜）。 */
+const BGM = (() => {
+  let ctx = null, master = null, timer = null;
+  let mode = 'festive', muted = false, eighth = 0, loop = 0, nextT = 0;
+  const MINOR = [0, 3, 5, 7, 10], MAJOR = [0, 2, 4, 7, 9];
+  const TEMPO = { festive: 104, night: 64 };
+  const base = () => mode === 'night' ? 220 : 261.63;
+  const degHz = (deg, oct) => {
+    const sc = mode === 'night' ? MINOR : MAJOR;
+    return base() * Math.pow(2, sc[((deg % 5) + 5) % 5] / 12 + (oct || 0));
+  };
+  const ac = () => {
+    if (!ctx) { try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { } }
+    if (ctx && ctx.state === 'suspended') ctx.resume();
+    if (ctx && !master) { master = ctx.createGain(); master.gain.value = muted ? 0 : 0.42; master.connect(ctx.destination); }
+    return ctx;
+  };
+  const pluck = (f, t, v = 0.13, d = 0.55) => {
+    const a = ac(); if (!a) return;
+    const o = a.createOscillator(), o2 = a.createOscillator(), g = a.createGain(), fl = a.createBiquadFilter();
+    o.type = 'triangle'; o.frequency.value = f; o2.type = 'sine'; o2.frequency.value = f * 2.005;
+    fl.type = 'lowpass'; fl.frequency.setValueAtTime(f * 6, t); fl.frequency.exponentialRampToValueAtTime(f * 1.6, t + d);
+    g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(0.001, t + d);
+    o.connect(fl); o2.connect(fl); fl.connect(g); g.connect(master);
+    o.start(t); o2.start(t); o.stop(t + d + 0.05); o2.stop(t + d + 0.05);
+  };
+  const drum = (t, v = 0.5) => {
+    const a = ac(); if (!a) return;
+    const o = a.createOscillator(), g = a.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(130, t); o.frequency.exponentialRampToValueAtTime(48, t + 0.26);
+    g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + 0.32);
+    const len = a.sampleRate * 0.05, b = a.createBuffer(1, len, a.sampleRate), ch = b.getChannelData(0);
+    for (let i = 0; i < len; i++) ch[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    const s = a.createBufferSource(), f = a.createBiquadFilter(), ng = a.createGain();
+    f.type = 'lowpass'; f.frequency.value = 500; ng.gain.value = v * 0.4;
+    s.buffer = b; s.connect(f); f.connect(ng); ng.connect(master); s.start(t);
+  };
+  const block = (t, v = 0.1) => {
+    const a = ac(); if (!a) return;
+    const o = a.createOscillator(), g = a.createGain();
+    o.type = 'square'; o.frequency.value = 1750;
+    g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.045);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + 0.06);
+  };
+  const gong = (t, v = 0.14) => {
+    const a = ac(); if (!a) return;
+    [392, 588, 743].forEach((f, i) => {
+      const o = a.createOscillator(), g = a.createGain();
+      o.type = 'sine'; o.frequency.value = f;
+      g.gain.setValueAtTime(v / (i + 1.4), t); g.gain.exponentialRampToValueAtTime(0.001, t + 2.4);
+      o.connect(g); g.connect(master); o.start(t); o.stop(t + 2.5);
+    });
+  };
+  const flute = (f, t, d, v = 0.05) => {
+    const a = ac(); if (!a) return;
+    const o = a.createOscillator(), g = a.createGain(), l = a.createOscillator(), lg = a.createGain();
+    o.type = 'sine'; o.frequency.value = f;
+    l.frequency.value = 5.2; lg.gain.value = f * 0.007; l.connect(lg); lg.connect(o.frequency);
+    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(v, t + 0.18);
+    g.gain.setValueAtTime(v, t + Math.max(0.2, d - 0.25)); g.gain.exponentialRampToValueAtTime(0.001, t + d);
+    o.connect(g); g.connect(master); o.start(t); l.start(t); o.stop(t + d + 0.05); l.stop(t + d + 0.05);
+  };
+  /* 两条四小节筝句：[八分音符位, 做声, 时值(八分)]，宫调五声，句尾长音落回宫/徵 */
+  const PHRASES = [
+    [[0, 2, 2], [2, 3, 1], [3, 4, 1], [4, 3, 2], [6, 2, 2], [8, 1, 1], [9, 2, 1], [10, 1, 2], [12, 0, 4]],
+    [[0, 3, 2], [2, 4, 1], [3, 3, 1], [4, 2, 2], [6, 3, 2], [8, 2, 1], [9, 1, 1], [10, 2, 2], [12, 4, 4]]
+  ];
+  function schedule(n, t) {
+    const spb = 60 / TEMPO[mode] / 2, night = mode === 'night';
+    if (n % 8 === 0) drum(t, night ? 0.34 : 0.5);
+    if (!night && n % 8 === 4) block(t);
+    if (!night && n % 8 === 6) block(t, 0.06);
+    if (n === 0 && loop % 2 === 0) gong(t, night ? 0.1 : 0.13);
+    const ph = PHRASES[(loop >> 1) % 2];
+    for (const [b, deg, len] of ph) if (b * 2 === n) pluck(degHz(deg, night ? 0 : 1), t, night ? 0.08 : 0.12, night ? 0.9 : 0.5);
+    if (!night && n % 2 === 1 && Math.random() < 0.22) pluck(degHz(4 - (loop % 2) * 2, 2), t, 0.045, 0.3); // 高把位点缀
+    if (n === 0) flute(degHz(loop % 2 ? 2 : 4, 0), t, spb * 16, night ? 0.075 : 0.045);
+    if (n === 16) flute(degHz(loop % 2 ? 4 : 1, 0), t, spb * 16, night ? 0.075 : 0.045);
+  }
+  function tick() {
+    const a = ac(); if (!a) return;
+    const spb = 60 / TEMPO[mode] / 2;
+    while (nextT < a.currentTime + 0.28) {
+      schedule(eighth % 32, Math.max(nextT, a.currentTime + 0.02));
+      eighth++; if (eighth % 32 === 0) loop++;
+      nextT += spb;
+    }
+  }
+  return {
+    ensure() { ac(); if (!timer) { nextT = ctx.currentTime + 0.1; timer = setInterval(tick, 90); } },
+    setMode(m) { if (m !== mode) { mode = m; loop = 0; eighth = 0; } this.ensure(); },
+    setMuted(m) { muted = m; if (master) master.gain.value = m ? 0 : 0.42; }
+  };
+})();
+window.addEventListener('pointerup', () => BGM.ensure(), { once: true });
+window.addEventListener('touchend', () => BGM.ensure(), { once: true });

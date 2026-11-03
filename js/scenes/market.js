@@ -3,8 +3,9 @@ class MarketScene extends Phaser.Scene {
   constructor() { super('Market'); }
   create() {
     fadeIn(this, ['goTween', 'bub']);
+    BGM.setMode('festive');
     this.busy = false;
-    this.hud = hud(this, '村口 · 烟火相逢', '循着人声逛逛，为乡亲捎回药草和灯材');
+    this.hud = hud(this, '交互 2A · 市集寻宝', '顺着龙虎的提醒，把要用的东西找齐（顺序不限）');
     this.drawBackdrop();
     this.buildHints();
     this.stalls = {};
@@ -13,8 +14,8 @@ class MarketScene extends Phaser.Scene {
     muteButton(this);
     this.refresh();
     this.time.delayedCall(400, () => dialog(this, [
-      { who: 'dragon', text: '包子铺又冒热气了。咱们在这里添些草药，再给陈伯挑些扎灯的材料。' },
-      { who: 'tiger', text: '竹篾、棉纸、灯油灯芯，别落下。点点摊位，慢慢挑，我陪你逛！' }
+      { who: 'dragon', text: '市集到了。吆喝声一声接一声——要找的东西，都在这四句提醒里，随时可以点开再看。' },
+      { who: 'tiger', text: '点你觉得对的摊子，选对了，摊主会把东西交到你手上。先逛哪家都行！' }
     ]));
   }
   drawBackdrop() {
@@ -119,7 +120,7 @@ class MarketScene extends Phaser.Scene {
       Object.assign(c, { g, st, s });
       this.checks[s.id] = c;
     });
-    this.goBtn = button(this, 1120, 666, '去药房制药 ▸', () => {
+    this.goBtn = button(this, 1120, 666, '回药庐制药 ▸', () => {
       const miss = STALLS.filter(s => s.need && !G.purchased.has(s.id)).map(s => s.name);
       if (miss.length) { toast(this, '还没找到：' + miss.join('、'), { y: 560 }); SFX.bad(); return; }
       goTo(this, 'Medicine', { mode: 'effects' });
@@ -144,7 +145,7 @@ class MarketScene extends Phaser.Scene {
     this.goBtn.setAlpha(all ? 1 : 0.55);
     if (all && !this.goTween) {
       this.goTween = this.tweens.add({ targets: this.goBtn, scale: 1.08, yoyo: true, repeat: -1, duration: 500 });
-      this.hud.setObjective('物资齐了，去药房制药！');
+      this.hud.setObjective('东西齐了，回药庐制药！');
     }
     this.hud.setStep(`已找到 ${[...G.purchased].length} / 4`);
   }
@@ -168,7 +169,7 @@ class MarketScene extends Phaser.Scene {
     const it = this.add.image(st.x, 380, iconKey).setDepth(800).setScale(iconKey.startsWith('herb') ? 0.4 : 1.1);
     const chk = this.checks[s.id];
     sparkle(this, st.x, 380, s.color, 12);
-    this.speak(MARKET_HINTS.find(h => h.id === s.id).who, `对，就是${s.name}！摊主把${s.item}交给了你。`);
+    this.speak(MARKET_HINTS.find(h => h.id === s.id).who, `对，就是这家！摊主把${s.item}塞到你手上，还笑着说“慢走啊”。`);
     this.tweens.add({ targets: it, x: chk.x + 20, y: chk.y, scale: 0.3, duration: 800, ease: 'Cubic.inOut', onComplete: () => {
       it.destroy(); G.purchased.add(s.id); this.refresh(); this.busy = false;
       sparkle(this, chk.x + 20, chk.y, C.green, 10);

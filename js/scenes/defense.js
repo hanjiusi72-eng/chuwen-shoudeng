@@ -11,8 +11,9 @@ class DefenseScene extends Phaser.Scene {
   constructor() { super('Defense'); }
   create() {
     fadeIn(this, ['ov', 'tut', 'markTw', 'rainDrag', 'drum', 'fog']);
+    BGM.setMode('night');
     this.add.image(W / 2, H / 2, 'bg_village_night').setDisplaySize(W, H);
-    this.hud = hud(this, '长夜 · 灯火相守', '守到天明：保护全村户灯');
+    this.hud = hud(this, '交互 3 · 守一村灯', '守到天明：护住全村的灯火');
     this.dawnG = this.add.graphics().setDepth(901);
     this.fx = this.add.container(0, 0).setDepth(300);
     this.buildLamps();
@@ -24,7 +25,7 @@ class DefenseScene extends Phaser.Scene {
     muteButton(this);
     this.resetNight();
     if (!G.tutorialSeen) this.startTutorial();
-    else this.showStartPanel('守夜开始前', '准备好了就开始守夜（60 秒）。');
+    else this.showStartPanel('守夜开始前', '疫鬼会趁夜吹灯。拖引路灯吓退它们，长按救亮熄灭的灯，再敲鼓、降龙雨——准备好了就开始（60 秒）。');
   }
 
   /* ---------- 构建 ---------- */
@@ -418,14 +419,14 @@ class DefenseScene extends Phaser.Scene {
   }
   begin() {
     this.resetNight(); this.mode = 'run';
-    this.hud.setObjective('守到天明：拖引路灯驱鬼 · 长按熄灯救亮 · 敲鼓 · 龙雨净化');
-    toast(this, '守夜开始！', { y: 140 });
+    this.hud.setObjective('守到天明：拖引路灯驱鬼 · 长按救亮熄灯 · 敲鼓 · 龙雨净雾');
+    toast(this, '守夜开始——灯火不灭，家就在！', { y: 140 });
   }
   fail() {
     this.mode = 'over'; G.nightRetries++;
     if (G.nightRetries >= 2) G.assist = true;
     this.cancelRain();
-    this.overlay('这一阵风太急', '全村的灯都彻底熄灭了。别灰心——再守一次！\n药房、采购和扎灯的进度都还在。' + (G.assist ? '\n（已为你开启辅助模式）' : ''), [
+    this.overlay('这一阵风太急', '灯都熄了，但别灰心——乡亲们已经把新灯芯备好了。\n再守一次，一定行！药房、市集和扎灯的进度都还在。' + (G.assist ? '\n（已为你开启辅助模式）' : ''), [
       ['开始重试', () => this.begin()],
       ['重看演示', () => this.startTutorial(), { fill: C.blue, edge: 0x00248a }]
     ]);

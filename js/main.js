@@ -1,6 +1,4 @@
 /* 启动 + 横竖屏检测（竖持暂停，横持恢复） */
-async function startGame() {
-await document.fonts.load('22px "Changming Hei"');
 const game = new Phaser.Game({
   type: Phaser.AUTO,
   parent: 'game',
@@ -9,7 +7,7 @@ const game = new Phaser.Game({
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
   input: { activePointers: 3 },
   render: { antialias: true, roundPixels: false },
-  scene: [BootScene, TitleScene, StoryScene, ActScene, GatherScene, MedicineScene, MarketScene, CraftScene, DefenseScene, DecorateScene, EndingScene, FinishScene]
+  scene: [BootScene, TitleScene, StoryScene, ActScene, ForageScene, MedicineScene, MarketScene, CraftScene, DefenseScene, DecorateScene, EndingScene, FinishScene]
 });
 
 window.game = game;
@@ -38,6 +36,3 @@ window.game = game;
   window.addEventListener('orientationchange', () => setTimeout(check, 120));
   setTimeout(check, 300);
 })();
-
-}
-startGame();

@@ -5,17 +5,26 @@ class BootScene extends Phaser.Scene {
   constructor() { super('Boot'); }
   preload() {
     const g = this.add.graphics();
-    const t = T(this, W / 2, H / 2 - 40, '长明 · 灯火将起', 28, '#fbf5a2');
+    const t = T(this, W / 2, H / 2 - 40, '龙虎灯 · 载入中', 28, '#fbf5a2');
     this.load.on('progress', p => { g.clear(); g.fillStyle(C.ink, 1); g.fillRoundedRect(W / 2 - 200, H / 2, 400, 18, 9); g.fillStyle(C.magenta, 1); g.fillRoundedRect(W / 2 - 200, H / 2, 400 * p, 18, 9); });
-    const A = 'assets/', V = '?v=' + ASSET_VERSION;
+    const A = 'assets/', V = '?v=' + ASSET_VERSION, V2 = 'assets/v2/';
     ['bg_pharmacy', 'bg_pattern', 'bg_village', 'bg_village_dim', 'bg_village_night', 'bg_board'].forEach(k => this.load.image(k, A + k + '.jpg' + V));
     ['char_dragon', 'char_elder', 'char_tiger', 'char_baosheng', 'head_dragon', 'head_elder', 'head_tiger', 'head_baosheng',
       'book_slips', 'scrolls', 'fan', 'stove', 'mortar', 'pattern_dragon', 'pattern_tiger', 'card_dragon', 'card_tiger',
       'ghost', 'wenshen', 'fig_dragon', 'fig_tiger', 'fig_carp']
       .forEach(k => this.load.image(k, A + k + '.png' + V));
-    for (let i = 1; i <= 6; i++) this.load.image('dice' + i, A + 'dice' + i + '.png' + V);
+    ['forage_pattern', 'forage_base', 'forage_cells', 'medicine_bg', 'token_god', 'node_tiger', 'node_dragon',
+      'recipe_heat', 'recipe_cough', 'recipe_damp', 'recipe_closed', 'herb_circle',
+      'tool_mortar_back', 'tool_mortar_front', 'tool_kettle_open', 'tool_stove', 'tool_mud', 'tool_pestle', 'tool_steam', 'tool_fan']
+      .forEach(k => this.load.image(k, V2 + k + '.png' + V));
+    for (let i = 1; i <= 6; i++) { this.load.image('dice' + i, A + 'dice' + i + '.png' + V); this.load.image('vdice' + i, V2 + 'vdice' + i + '.png' + V); }
     for (let i = 1; i <= 8; i++) this.load.image('circle' + i, A + 'circle' + i + '.png' + V);
-    HERBS.forEach(h => { this.load.image('herb_' + h.id, A + 'herb_' + h.id + '.png' + V); this.load.image('plant_' + h.id, A + 'plant_' + h.id + '.png' + V); });
+    HERBS.forEach(h => {
+      this.load.image('herb_' + h.id, A + 'herb_' + h.id + '.png' + V);
+      this.load.image('plant_' + h.id, A + 'plant_' + h.id + '.png' + V);
+      this.load.image('board_' + h.id, V2 + 'board_' + h.id + '.png' + V);
+      this.load.image('med_' + h.id, V2 + 'med_' + h.id + '.png' + V);
+    });
   }
   create() {
     document.getElementById('loading').style.display = 'none';

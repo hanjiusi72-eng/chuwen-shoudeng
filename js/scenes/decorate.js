@@ -24,7 +24,7 @@ class DecorateScene extends Phaser.Scene {
   create() {
     fadeIn(this, ['finished', 'drawing', 'rt', 'brush', 'dragonImg', 'tigerImg', 'done']);
     this.add.image(W / 2, H / 2, 'bg_pattern').setDisplaySize(W, H);
-    this.hud = hud(this, '天明 · 落笔祈愿', '沿着淡淡的轮廓描出龙纹');
+    this.hud = hud(this, '交互 4 · 画灯题字', '沿着淡淡的轮廓描出龙纹');
     this.LX = 667; this.LY = 408;
     this.lamp = drawFinalLamp(this, this.LX, this.LY, 1, { patterns: false, blessing: false });
     this.canMask = this.renderer.type === Phaser.WEBGL;
@@ -38,7 +38,7 @@ class DecorateScene extends Phaser.Scene {
     this.input.on('pointerup', () => { this.drawing = false; });
     this.input.on('gameout', () => { this.drawing = false; });
     muteButton(this);
-    this.time.delayedCall(400, () => dialog(this, [{ who: 'dragon', text: '用手指（或鼠标）按住，沿着灯面上淡淡的龙纹来回描。描出八成，剩下的会自动补全。' }]));
+    this.time.delayedCall(400, () => dialog(this, [{ who: 'dragon', text: '用手指按住，沿着灯面上淡淡的龙纹来回描。描出八成，剩下的我替你收笔——师父也是这样教我的。' }]));
   }
   leftPanel() {
     panel(this, 28, 86, 300, 420, { fill: C.cream });
@@ -46,7 +46,7 @@ class DecorateScene extends Phaser.Scene {
     this.stepT = ['① 描龙纹', '② 描虎纹', '③ 选一句吉语', '④ 完成这盏灯'].map((s, i) => T(this, 60, 166 + i * 44, s, 20, '#8a8a96', { ox: 0 }));
     this.progT = T(this, 178, 352, '', 18, '#2a1030', { sans: true });
     this.progG = this.add.graphics();
-    this.clearB = button(this, 178, 444, '清除当前纹样', () => this.clearCurrent(), { w: 220, h: 50, size: 19, fill: C.blue, edge: 0x00248a });
+    this.clearB = button(this, 178, 444, '重描这一笔', () => this.clearCurrent(), { w: 220, h: 50, size: 19, fill: C.blue, edge: 0x00248a });
     T(this, 178, 545, '描到轮廓外不扣分，\n可以放心地描。', 16, '#fff8d0', { sans: true, align: 'center', stroke: '#9a0078', strokeThickness: 4 });
   }
   rightPanel() {
