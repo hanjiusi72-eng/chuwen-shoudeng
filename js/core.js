@@ -238,29 +238,73 @@ function sparkle(scene, x, y, color = C.yellow, n = 14, depth = 800) {
   }
 }
 
+/* ---------------- 音频总线（音乐与音效共用一个 AudioContext，避免移动端多上下文互相打断） ---------------- */
+const AUDIO = (() => {
+  let ctx = null, master = null, music = null, sfx = null, wet = null, muted = false;
+  const impulse = (a, seconds, decay) => {
+    const len = Math.floor(a.sampleRate * seconds), buf = a.createBuffer(2, len, a.sampleRate);
+    for (let ch = 0; ch < 2; ch++) {
+      const d = buf.getChannelData(ch);
+      for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
+    }
+    return buf;
+  };
+  function ensure() {
+    if (!ctx) { try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; } }
+    if (ctx.state === 'suspended') { try { const pr = ctx.resume(); if (pr && pr.catch) pr.catch(() => { }); } catch (e) { } }
+    if (!master) {
+      master = ctx.createGain(); master.gain.value = muted ? 0 : 0.9;
+      const comp = ctx.createDynamicsCompressor();
+      comp.threshold.value = -16; comp.knee.value = 18; comp.ratio.value = 5;
+      comp.attack.value = 0.006; comp.release.value = 0.26;
+      master.connect(comp); comp.connect(ctx.destination);
+      music = ctx.createGain(); music.gain.value = 0.55; music.connect(master);
+      sfx = ctx.createGain(); sfx.gain.value = 0.75; sfx.connect(master);
+      const conv = ctx.createConvolver(); conv.buffer = impulse(ctx, 2.0, 2.6);
+      wet = ctx.createGain(); wet.gain.value = 0.20;
+      music.connect(conv); conv.connect(wet); wet.connect(master);
+    }
+    return ctx;
+  }
+  return {
+    ensure, ctx: () => ctx, music: () => music, sfx: () => sfx,
+    now: () => ctx ? ctx.currentTime : 0,
+    get muted() { return muted; },
+    setMuted(m) {
+      muted = m;
+      if (master && ctx) {
+        const t = ctx.currentTime;
+        master.gain.cancelScheduledValues(t);
+        master.gain.setTargetAtTime(m ? 0 : 0.9, t, 0.06);
+      }
+    },
+    toggleMuted() { this.setMuted(!muted); return muted; }
+  };
+})();
+
 /* ---------------- 音效（WebAudio 合成，无需素材） ---------------- */
 const SFX = (() => {
-  let ctx = null, muted = false;
-  const ac = () => { if (!ctx) { try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { } } if (ctx && ctx.state === 'suspended') ctx.resume(); return ctx; };
+  const ac = () => AUDIO.ensure();
+  const out = () => AUDIO.sfx() || (AUDIO.ctx() && AUDIO.ctx().destination);
   const tone = (f, d = 0.15, type = 'sine', v = 0.15, slide = 0, delay = 0) => {
-    const a = ac(); if (!a || muted) return;
+    const a = ac(); if (!a || AUDIO.muted) return;
     const t0 = a.currentTime + delay, o = a.createOscillator(), g = a.createGain();
     o.type = type; o.frequency.setValueAtTime(f, t0); if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, f + slide), t0 + d);
     g.gain.setValueAtTime(v, t0); g.gain.exponentialRampToValueAtTime(0.001, t0 + d);
-    o.connect(g); g.connect(a.destination); o.start(t0); o.stop(t0 + d + 0.02);
+    o.connect(g); g.connect(out()); o.start(t0); o.stop(t0 + d + 0.02);
   };
   const noise = (d = 0.3, v = 0.2, lp = 800, delay = 0) => {
-    const a = ac(); if (!a || muted) return;
+    const a = ac(); if (!a || AUDIO.muted) return;
     const len = a.sampleRate * d, b = a.createBuffer(1, len, a.sampleRate), ch = b.getChannelData(0);
     for (let i = 0; i < len; i++) ch[i] = (Math.random() * 2 - 1) * (1 - i / len);
     const s = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
     f.type = 'lowpass'; f.frequency.value = lp; g.gain.value = v;
-    s.buffer = b; s.connect(f); f.connect(g); g.connect(a.destination); s.start(a.currentTime + delay);
+    s.buffer = b; s.connect(f); f.connect(g); g.connect(out()); s.start(a.currentTime + delay);
   };
   return {
     unlock: ac,
-    toggle() { muted = !muted; return muted; },
-    get muted() { return muted; },
+    toggle() { return AUDIO.toggleMuted(); },
+    get muted() { return AUDIO.muted; },
     click() { tone(880, 0.06, 'triangle', 0.08); },
     drop() { tone(520, 0.1, 'sine', 0.14, 200); },
     ok() { tone(660, 0.12, 'triangle', 0.14); tone(880, 0.12, 'triangle', 0.14, 0, 0.1); tone(1320, 0.25, 'triangle', 0.12, 0, 0.2); },
@@ -282,106 +326,313 @@ const SFX = (() => {
 
 /* 静音按钮（各场景右下角） */
 function muteButton(scene) {
-  const t = T(scene, W - 26, H - 22, SFX.muted ? '🔇' : '🔊', 22, '#fff', { ox: 1, sans: true }).setDepth(2000).setInteractive({ useHandCursor: true });
-  t.on('pointerup', () => { const m = SFX.toggle(); BGM.setMuted(m); t.setText(m ? '🔇' : '🔊'); });
+  const t = T(scene, W - 26, H - 22, AUDIO.muted ? '🔇' : '🔊', 22, '#fff', { ox: 1, sans: true }).setDepth(2000).setInteractive({ useHandCursor: true });
+  t.on('pointerup', () => { const m = SFX.toggle(); t.setText(m ? '🔇' : '🔊'); });
   return t;
 }
 
-/* ---------------- 背景音乐（WebAudio 程序化古风乐：宫调五声 + 鼓点 + 古筝拨弦 + 笛声） ----------------
-   festive：热闹明快（标题、采药、市集、制药、扎灯、结尾）；night：低回庄严（守灯夜）。 */
+/* ---------------- 背景音乐（连续生成式配乐：日/夜两层常驻，交叉淡化，不重启、不断句） ----------------
+   说明：所有声部共用一条不断前进的八分音符时钟；日夜只是两组音色/密度的交叉淡化，
+   换场不重置小节、不换主音，因此场景切换、对话、过场都不会出现音乐断口。 */
 const BGM = (() => {
-  let ctx = null, master = null, timer = null;
-  let mode = 'festive', muted = false, eighth = 0, loop = 0, nextT = 0;
-  const MINOR = [0, 3, 5, 7, 10], MAJOR = [0, 2, 4, 7, 9];
-  const TEMPO = { festive: 104, night: 64 };
-  const base = () => mode === 'night' ? 220 : 261.63;
-  const degHz = (deg, oct) => {
-    const sc = mode === 'night' ? MINOR : MAJOR;
-    return base() * Math.pow(2, sc[((deg % 5) + 5) % 5] / 12 + (oct || 0));
-  };
-  const ac = () => {
-    if (!ctx) { try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { } }
-    if (ctx && ctx.state === 'suspended') ctx.resume();
-    if (ctx && !master) { master = ctx.createGain(); master.gain.value = muted ? 0 : 0.42; master.connect(ctx.destination); }
-    return ctx;
-  };
-  const pluck = (f, t, v = 0.13, d = 0.55) => {
-    const a = ac(); if (!a) return;
-    const o = a.createOscillator(), o2 = a.createOscillator(), g = a.createGain(), fl = a.createBiquadFilter();
-    o.type = 'triangle'; o.frequency.value = f; o2.type = 'sine'; o2.frequency.value = f * 2.005;
-    fl.type = 'lowpass'; fl.frequency.setValueAtTime(f * 6, t); fl.frequency.exponentialRampToValueAtTime(f * 1.6, t + d);
-    g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(0.001, t + d);
-    o.connect(fl); o2.connect(fl); fl.connect(g); g.connect(master);
-    o.start(t); o2.start(t); o.stop(t + d + 0.05); o2.stop(t + d + 0.05);
-  };
-  const drum = (t, v = 0.5) => {
-    const a = ac(); if (!a) return;
+  const SPB = 0.30;                    // 100 BPM 的八分音符
+  // 前瞻 6 秒 + 100ms 轮询：守灯夜等重负载场景主线程卡顿、后台标签节流时也不断粮
+  const LOOKAHEAD = 6.0, TICK = 100;
+  let timer = null, running = false, step = 0, nextT = 0;
+  let mode = 'festive', pendingMode = null, day = null, night = null, windGain = null;
+  let dayTarget = 1.0, nightTarget = 0.10;
+
+  const midi = n => 440 * Math.pow(2, (n - 69) / 12);
+  const rnd = n => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+
+  /* C - Am - F - G，每小节一个和弦；日夜共用同一和声，换场只换配器 */
+  const CHORDS = [
+    { root: 48, fifth: 55, third: 52 },
+    { root: 45, fifth: 52, third: 48 },
+    { root: 41, fifth: 48, third: 45 },
+    { root: 43, fifth: 50, third: 47 }
+  ];
+
+  /* 日间筝句：每句 4 小节（32 个八分音符），四句循环 */
+  const DAY_PHRASES = [
+    [[0, 76, 2], [2, 79, 2], [4, 81, 2], [6, 79, 2], [8, 76, 2], [10, 74, 2], [12, 72, 4],
+     [16, 74, 2], [18, 76, 2], [20, 79, 2], [22, 76, 2], [24, 74, 2], [26, 72, 6]],
+    [[0, 81, 2], [2, 79, 2], [4, 76, 2], [6, 74, 2], [8, 76, 2], [10, 79, 2], [12, 81, 4],
+     [16, 79, 2], [18, 76, 2], [20, 74, 2], [22, 72, 2], [24, 74, 8]],
+    [[0, 72, 2], [2, 74, 2], [4, 76, 2], [6, 79, 2], [8, 81, 2], [10, 79, 2], [12, 76, 4],
+     [16, 74, 2], [18, 76, 2], [20, 79, 2], [22, 81, 2], [24, 79, 2], [26, 76, 2], [28, 74, 4]],
+    [[0, 76, 2], [2, 79, 2], [4, 81, 2], [6, 84, 2], [8, 81, 2], [10, 79, 2], [12, 76, 4],
+     [16, 74, 2], [18, 72, 2], [20, 74, 2], [22, 76, 2], [24, 72, 8]]
+  ];
+
+  /* 夜间低音短句：8 小节一循环，音符稀疏、时值长 */
+  const NIGHT_NOTES = [
+    [0, 57, 4], [6, 60, 3], [12, 64, 4], [20, 62, 3], [26, 60, 4],
+    [32, 57, 4], [40, 55, 3], [46, 57, 4], [52, 60, 4], [58, 57, 6]
+  ];
+
+  /* 夜间埙/箫旋律：16 小节一循环，与和弦同步走，保证夜里音乐仍然成句不空窗 */
+  const NIGHT_MELODY = [
+    [0, 72, 10], [14, 74, 6], [22, 76, 8], [34, 74, 6], [42, 72, 10],
+    [56, 69, 6], [64, 72, 10], [78, 74, 6], [86, 76, 12],
+    [104, 79, 8], [116, 76, 6], [124, 74, 10],
+    [140, 76, 6], [148, 72, 8], [160, 74, 6], [168, 72, 12],
+    [186, 69, 8], [198, 67, 6], [206, 69, 10],
+    [222, 72, 6], [230, 74, 8], [242, 76, 6], [250, 72, 14]
+  ];
+
+  function nightFlute(f, t, dur, vol) {
+    const a = AUDIO.ctx(); if (!a || !night) return;
+    const o = a.createOscillator(), o2 = a.createOscillator(), g = a.createGain(), lp = a.createBiquadFilter();
+    o.type = 'sine'; o.frequency.value = f;
+    o2.type = 'sine'; o2.frequency.value = f * 1.005;   // 轻微失谐做出箫的颤感
+    lp.type = 'lowpass'; lp.frequency.value = Math.min(1200, f * 2.4);
+    const vib = a.createOscillator(), vg = a.createGain();
+    vib.frequency.value = 4.2; vg.gain.value = f * 0.004;
+    vib.connect(vg); vg.connect(o.frequency);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(vol, t + Math.min(1.2, dur * 0.3));
+    g.gain.setValueAtTime(vol, t + Math.max(1.2, dur * 0.7));
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(lp); o2.connect(lp); lp.connect(g); g.connect(night);
+    o.start(t); o2.start(t); vib.start(t);
+    o.stop(t + dur + 0.1); o2.stop(t + dur + 0.1); vib.stop(t + dur + 0.1);
+  }
+
+  function pluck(f, t, dur, vol, isNight) {
+    const a = AUDIO.ctx(); if (!a) return;
+    const bus = isNight ? night : day; if (!bus) return;
+    const o = a.createOscillator(), o2 = a.createOscillator(), g = a.createGain(), lp = a.createBiquadFilter();
+    o.type = 'triangle'; o.frequency.setValueAtTime(f * 0.994, t); o.frequency.linearRampToValueAtTime(f, t + 0.035);
+    o2.type = 'sine'; o2.frequency.value = f * 2.002;
+    lp.type = 'lowpass';
+    const hi = isNight ? Math.min(1500, f * 3.2) : Math.min(5200, f * 7.5);
+    lp.frequency.setValueAtTime(hi, t);
+    lp.frequency.exponentialRampToValueAtTime(Math.max(220, f * 1.4), t + dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(vol, t + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(lp); o2.connect(lp); lp.connect(g); g.connect(bus);
+    o.start(t); o2.start(t); o.stop(t + dur + 0.05); o2.stop(t + dur + 0.05);
+  }
+
+  function pad(freqs, t, dur, vol, isNight) {
+    const a = AUDIO.ctx(); if (!a) return;
+    const bus = isNight ? night : day; if (!bus) return;
+    freqs.forEach((f, i) => {
+      const o = a.createOscillator(), g = a.createGain(), lp = a.createBiquadFilter();
+      o.type = isNight ? 'sine' : 'triangle';
+      o.frequency.value = f; o.detune.value = (i - 1) * 5;
+      lp.type = 'lowpass'; lp.frequency.value = isNight ? 640 : 1500;
+      const v = vol / (i * 0.7 + 1.4);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(v, t + dur * 0.28);
+      g.gain.setValueAtTime(v, t + dur * 0.72);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(lp); lp.connect(g); g.connect(bus);
+      o.start(t); o.stop(t + dur + 0.12);
+    });
+  }
+
+  function flute(f, t, dur, vol) {
+    const a = AUDIO.ctx(); if (!a || !day) return;
+    const o = a.createOscillator(), g = a.createGain(), l = a.createOscillator(), lg = a.createGain();
+    o.type = 'sine'; o.frequency.value = f;
+    l.frequency.value = 4.7; lg.gain.value = f * 0.006;
+    l.connect(lg); lg.connect(o.frequency);
+    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + 0.45);
+    g.gain.setValueAtTime(vol, t + Math.max(0.6, dur - 0.6));
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(day);
+    o.start(t); l.start(t); o.stop(t + dur + 0.08); l.stop(t + dur + 0.08);
+  }
+
+  function drum(t, vol, isNight) {
+    const a = AUDIO.ctx(); if (!a) return;
+    const bus = isNight ? night : day; if (!bus) return;
     const o = a.createOscillator(), g = a.createGain();
-    o.type = 'sine'; o.frequency.setValueAtTime(130, t); o.frequency.exponentialRampToValueAtTime(48, t + 0.26);
-    g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
-    o.connect(g); g.connect(master); o.start(t); o.stop(t + 0.32);
+    o.type = 'sine';
+    o.frequency.setValueAtTime(isNight ? 92 : 132, t);
+    o.frequency.exponentialRampToValueAtTime(isNight ? 38 : 48, t + 0.26);
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + (isNight ? 0.42 : 0.3));
+    o.connect(g); g.connect(bus); o.start(t); o.stop(t + 0.46);
     const len = a.sampleRate * 0.05, b = a.createBuffer(1, len, a.sampleRate), ch = b.getChannelData(0);
     for (let i = 0; i < len; i++) ch[i] = (Math.random() * 2 - 1) * (1 - i / len);
     const s = a.createBufferSource(), f = a.createBiquadFilter(), ng = a.createGain();
-    f.type = 'lowpass'; f.frequency.value = 500; ng.gain.value = v * 0.4;
-    s.buffer = b; s.connect(f); f.connect(ng); ng.connect(master); s.start(t);
-  };
-  const block = (t, v = 0.1) => {
-    const a = ac(); if (!a) return;
+    f.type = 'lowpass'; f.frequency.value = 460; ng.gain.value = vol * 0.35;
+    s.buffer = b; s.connect(f); f.connect(ng); ng.connect(bus); s.start(t);
+  }
+
+  function wood(t, vol) {
+    const a = AUDIO.ctx(); if (!a || !day) return;
     const o = a.createOscillator(), g = a.createGain();
-    o.type = 'square'; o.frequency.value = 1750;
-    g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.045);
-    o.connect(g); g.connect(master); o.start(t); o.stop(t + 0.06);
-  };
-  const gong = (t, v = 0.14) => {
-    const a = ac(); if (!a) return;
-    [392, 588, 743].forEach((f, i) => {
+    o.type = 'square'; o.frequency.value = 1680;
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+    o.connect(g); g.connect(day); o.start(t); o.stop(t + 0.06);
+  }
+
+  function shaker(t, vol) {
+    const a = AUDIO.ctx(); if (!a || !day) return;
+    const len = a.sampleRate * 0.045, b = a.createBuffer(1, len, a.sampleRate), ch = b.getChannelData(0);
+    for (let i = 0; i < len; i++) ch[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    const s = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
+    f.type = 'highpass'; f.frequency.value = 5200; g.gain.value = vol;
+    s.buffer = b; s.connect(f); f.connect(g); g.connect(day); s.start(t);
+  }
+
+  function gong(t, vol) {
+    const a = AUDIO.ctx(); if (!a || !day) return;
+    [196, 294, 392].forEach((f, i) => {
       const o = a.createOscillator(), g = a.createGain();
       o.type = 'sine'; o.frequency.value = f;
-      g.gain.setValueAtTime(v / (i + 1.4), t); g.gain.exponentialRampToValueAtTime(0.001, t + 2.4);
-      o.connect(g); g.connect(master); o.start(t); o.stop(t + 2.5);
+      g.gain.setValueAtTime(vol / (i + 1.5), t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 2.6);
+      o.connect(g); g.connect(day); o.start(t); o.stop(t + 2.7);
     });
-  };
-  const flute = (f, t, d, v = 0.05) => {
-    const a = ac(); if (!a) return;
-    const o = a.createOscillator(), g = a.createGain(), l = a.createOscillator(), lg = a.createGain();
-    o.type = 'sine'; o.frequency.value = f;
-    l.frequency.value = 5.2; lg.gain.value = f * 0.007; l.connect(lg); lg.connect(o.frequency);
-    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(v, t + 0.18);
-    g.gain.setValueAtTime(v, t + Math.max(0.2, d - 0.25)); g.gain.exponentialRampToValueAtTime(0.001, t + d);
-    o.connect(g); g.connect(master); o.start(t); l.start(t); o.stop(t + d + 0.05); l.stop(t + d + 0.05);
-  };
-  /* 两条四小节筝句：[八分音符位, 做声, 时值(八分)]，宫调五声，句尾长音落回宫/徵 */
-  const PHRASES = [
-    [[0, 2, 2], [2, 3, 1], [3, 4, 1], [4, 3, 2], [6, 2, 2], [8, 1, 1], [9, 2, 1], [10, 1, 2], [12, 0, 4]],
-    [[0, 3, 2], [2, 4, 1], [3, 3, 1], [4, 2, 2], [6, 3, 2], [8, 2, 1], [9, 1, 1], [10, 2, 2], [12, 4, 4]]
-  ];
-  function schedule(n, t) {
-    const spb = 60 / TEMPO[mode] / 2, night = mode === 'night';
-    if (n % 8 === 0) drum(t, night ? 0.34 : 0.5);
-    if (!night && n % 8 === 4) block(t);
-    if (!night && n % 8 === 6) block(t, 0.06);
-    if (n === 0 && loop % 2 === 0) gong(t, night ? 0.1 : 0.13);
-    const ph = PHRASES[(loop >> 1) % 2];
-    for (const [b, deg, len] of ph) if (b * 2 === n) pluck(degHz(deg, night ? 0 : 1), t, night ? 0.08 : 0.12, night ? 0.9 : 0.5);
-    if (!night && n % 2 === 1 && Math.random() < 0.22) pluck(degHz(4 - (loop % 2) * 2, 2), t, 0.045, 0.3); // 高把位点缀
-    if (n === 0) flute(degHz(loop % 2 ? 2 : 4, 0), t, spb * 16, night ? 0.075 : 0.045);
-    if (n === 16) flute(degHz(loop % 2 ? 4 : 1, 0), t, spb * 16, night ? 0.075 : 0.045);
   }
+
+  function bell(t, f, vol) {
+    const a = AUDIO.ctx(); if (!a || !night) return;
+    [1, 2.01, 2.98, 4.12].forEach((m, i) => {
+      const o = a.createOscillator(), g = a.createGain();
+      o.type = 'sine'; o.frequency.value = f * m;
+      g.gain.setValueAtTime(vol / (i * 1.3 + 1), t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 1.8 + i * 0.4);
+      o.connect(g); g.connect(night); o.start(t); o.stop(t + 2.8);
+    });
+  }
+
+  function buildWind(a) {
+    const len = a.sampleRate * 4, buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
+    let last = 0;
+    for (let i = 0; i < len; i++) { const w = Math.random() * 2 - 1; last = last * 0.965 + w * 0.035; d[i] = last * 2.6; }
+    const src = a.createBufferSource(); src.buffer = buf; src.loop = true;
+    const lp = a.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 430;
+    windGain = a.createGain(); windGain.gain.value = 0.10;
+    const lfo = a.createOscillator(), lg = a.createGain();
+    lfo.frequency.value = 0.07; lg.gain.value = 0.045;
+    lfo.connect(lg); lg.connect(windGain.gain);
+    src.connect(lp); lp.connect(windGain); windGain.connect(night);
+    src.start(); lfo.start();
+  }
+
+  function scheduleStep(s, t) {
+    const bar = Math.floor(s / 8), inBar = s % 8, chord = CHORDS[bar % 4];
+    // 换模式只在整小节边界生效：交叉淡化与乐句对齐，避免切到半句上产生拼接感
+    if (inBar === 0 && pendingMode !== null) {
+      mode = pendingMode; pendingMode = null;
+      dayTarget = mode === 'night' ? 0.10 : 1.0;
+      nightTarget = mode === 'night' ? 1.0 : 0.10;
+      const a = AUDIO.ctx(); const now = a ? a.currentTime : t;
+      if (a && day) {
+        const rt = Math.max(t, now + 0.05);
+        [day, night].forEach(g => {
+          if (g.gain.cancelAndHoldAtTime) g.gain.cancelAndHoldAtTime(rt);
+          else { const v = g.gain.value; g.gain.cancelScheduledValues(rt); g.gain.setValueAtTime(v, rt); }
+        });
+        day.gain.linearRampToValueAtTime(dayTarget, rt + 5.5);
+        night.gain.linearRampToValueAtTime(nightTarget, rt + 5.5);
+      }
+    }
+    if (inBar === 0) pad([midi(chord.root), midi(chord.root + 7), midi(chord.root + 12)], t, SPB * 8 * 1.12, 0.050, false);
+    if (inBar === 0 && bar % 2 === 0) pad([midi(chord.root - 12), midi(chord.root - 5), midi(chord.root)], t, SPB * 16 * 1.06, 0.060, true);
+
+    const phrase = DAY_PHRASES[Math.floor(bar / 4) % DAY_PHRASES.length];
+    const local = s % 32;
+    for (let i = 0; i < phrase.length; i++) {
+      const ev = phrase[i];
+      if (ev[0] !== local) continue;
+      const f = midi(ev[1]);
+      pluck(f, t, SPB * ev[2] * 0.96, 0.082 + (local % 4 === 0 ? 0.014 : 0), false);
+      if (rnd(s + ev[1]) < 0.10) pluck(f * 2, t + 0.025, SPB * Math.max(1, ev[2] * 0.5), 0.016, false);
+      if (rnd(s + ev[1] + 7) < 0.08) pluck(midi(ev[1] - 12), t + 0.012, SPB * ev[2] * 0.8, 0.022, true);
+    }
+    const nl = s % 64;
+    for (let i = 0; i < NIGHT_NOTES.length; i++) {
+      const ev = NIGHT_NOTES[i];
+      if (ev[0] === nl) pluck(midi(ev[1]), t, SPB * ev[2] * 1.35, 0.070, true);
+    }
+    // 夜间旋律：与和弦同步的箫句，让守灯夜里音乐依然成句、不显空窗
+    const nm = s % 256;
+    for (let i = 0; i < NIGHT_MELODY.length; i++) {
+      const ev = NIGHT_MELODY[i];
+      if (ev[0] === nm) nightFlute(midi(ev[1]), t, SPB * ev[2] * 0.92, 0.030);
+    }
+
+    if (local === 0 || local === 16) {
+      const n = local === 0 ? chord.third + 12 : chord.fifth + 12;
+      flute(midi(n), t, SPB * 11, 0.026);
+    }
+    if (inBar === 0 || inBar === 4) drum(t, 0.20, false);
+    else if (inBar === 6 && bar % 2 === 1) drum(t, 0.10, false);
+    if (inBar === 3 || inBar === 7) wood(t, 0.032);
+    if (s % 2 === 0) shaker(t, 0.010);
+    if (inBar === 0 && bar % 8 === 0) gong(t, 0.075);
+
+    if (inBar === 0 && bar % 2 === 0) drum(t, 0.12, true);
+    if (inBar === 0 && bar % 8 === 2) bell(t, midi(84), 0.032);
+    if (inBar === 4 && bar % 8 === 5) bell(t, midi(79), 0.022);
+  }
+
   function tick() {
-    const a = ac(); if (!a) return;
-    const spb = 60 / TEMPO[mode] / 2;
-    while (nextT < a.currentTime + 0.28) {
-      schedule(eighth % 32, Math.max(nextT, a.currentTime + 0.02));
-      eighth++; if (eighth % 32 === 0) loop++;
-      nextT += spb;
+    const a = AUDIO.ctx();
+    if (!a || !running || a.state !== 'running') return;
+    const now = a.currentTime;
+    if (nextT < now - 0.25) {
+      // 落后时按整小节对齐追赶：既追上时间，又不把乐句/和弦切在半截
+      const missed = Math.ceil((now - nextT) / SPB);
+      const skip = missed + ((8 - (step + missed) % 8) % 8);
+      step += skip; nextT += skip * SPB;
+      if (nextT < now + 0.02) nextT = now + 0.05;
+    }
+    while (nextT < now + LOOKAHEAD) {
+      try { scheduleStep(step, nextT); } catch (e) { }
+      step++; nextT += SPB;
     }
   }
+
   return {
-    ensure() { ac(); if (!timer) { nextT = ctx.currentTime + 0.1; timer = setInterval(tick, 90); } },
-    setMode(m) { if (m !== mode) { mode = m; loop = 0; eighth = 0; } this.ensure(); },
-    setMuted(m) { muted = m; if (master) master.gain.value = m ? 0 : 0.42; }
+    ensure() {
+      const a = AUDIO.ensure(); if (!a) return;
+      if (!day) {
+        day = a.createGain(); day.gain.value = 0; day.connect(AUDIO.music());
+        night = a.createGain(); night.gain.value = 0; night.connect(AUDIO.music());
+        buildWind(a);
+        day.gain.setValueAtTime(0, a.currentTime);
+        day.gain.linearRampToValueAtTime(dayTarget, a.currentTime + 2.6);
+        night.gain.setValueAtTime(0, a.currentTime);
+        night.gain.linearRampToValueAtTime(nightTarget, a.currentTime + 3.4);
+      }
+      if (!running) {
+        running = true;
+        nextT = a.currentTime + 0.12;
+        step = 0;
+        timer = setInterval(tick, TICK);
+      }
+    },
+    setMode(m) {
+      const want = m === 'night' ? 'night' : 'festive';
+      this.ensure();
+      const a = AUDIO.ctx(); if (!a || !day) return;
+      if (!running) {                 // 音乐还没起：直接以目标模式启动
+        mode = want;
+        dayTarget = mode === 'night' ? 0.10 : 1.0;
+        nightTarget = mode === 'night' ? 1.0 : 0.10;
+        const t = a.currentTime;
+        day.gain.setValueAtTime(0, t); day.gain.linearRampToValueAtTime(dayTarget, t + 3);
+        night.gain.setValueAtTime(0, t); night.gain.linearRampToValueAtTime(nightTarget, t + 3);
+        return;
+      }
+      if (want === mode && pendingMode === null) return;   // 同模式重复调用不重触发淡化
+      if (want === pendingMode) return;
+      // 记下待生效模式，由 scheduleStep 在下一个整小节边界平滑交叉淡化
+      pendingMode = want;
+    },
+    setMuted(m) { AUDIO.setMuted(m); }
   };
 })();
-window.addEventListener('pointerup', () => BGM.ensure(), { once: true });
-window.addEventListener('touchend', () => BGM.ensure(), { once: true });
+['pointerdown', 'touchend'].forEach(ev => window.addEventListener(ev, () => BGM.ensure(), { once: true, passive: true }));
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) { const a = AUDIO.ctx(); if (a) BGM.ensure(); }
+});
