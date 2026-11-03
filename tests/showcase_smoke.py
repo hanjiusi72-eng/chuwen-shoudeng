@@ -14,7 +14,7 @@ with sync_playwright() as p:
   assert abs(page.locator('video').nth(i).evaluate('v=>v.duration')-duration)<.15
   if i>0:assert page.locator('video').nth(i-1).evaluate('v=>v.paused')
  checks+=['三个MP4均可在浏览器播放，时长为36/44/60秒','播放新影片会自动暂停其他影片']
- for selector,local,label in [('a[download$=".mp4"]',ROOT/'showcase/downloads/01-pop-play.mp4','单部MP4下载'),('a[href="downloads/guangliang-complete.zip"]',ROOT/'showcase/downloads/guangliang-complete.zip','完整包下载')]:
+ for selector,local,label in [('a[download$=".mp4"]',ROOT/'showcase/downloads/01-pop-play.mp4','单部MP4下载'),('a[href^="downloads/guangliang-complete.zip"]',ROOT/'showcase/downloads/guangliang-complete.zip','完整包下载')]:
   with page.expect_download(timeout=60000) as info:page.locator(selector).first.click()
   d=info.value;target=OUT/d.suggested_filename;d.save_as(target)
   assert target.stat().st_size==local.stat().st_size

@@ -7,10 +7,10 @@
       "en": "POP / PLAY",
       "dur": 36,
       "color": "#ff75c7",
-      "desc": "高饱和撞色、角色贴纸与卡片快切。让采药、济世和守灯，成为一场有节奏的指尖冒险。",
-      "ref": "参考 1 · 撞色插画与快节奏浏览",
+      "desc": "完整龙虎立像、弹性卡片、旋转花盘与棋盘纹样，配合粒子光点和高饱和撞色，让指尖冒险更鲜活。",
+      "ref": "参考 1 · 视觉增强版",
       "preview": 0,
-      "size": 15.6
+      "size": 14.9
     },
     {
       "n": "02",
@@ -40,8 +40,8 @@
   "files": [
     {
       "file": "01-pop-play.mp4",
-      "bytes": 16345465,
-      "sha256": "ad1e75b8f9273d2b9b150e62b531ee8611048560f5eaf87710e239aefbd258c3"
+      "bytes": 15640889,
+      "sha256": "78a27931262d6cdeef7467679f29106d39a88619c1a70c31d5f674a2eca62423"
     },
     {
       "file": "02-soft-orbits.mp4",
@@ -65,8 +65,8 @@
     },
     {
       "file": "guangliang-complete.zip",
-      "bytes": 57450145,
-      "sha256": "6eb91af239ec17feab993aa4752b38c7453cf1a6f1fe22b0a0897ebebfefa044"
+      "bytes": 56697315,
+      "sha256": "baf5c1830a49fb7d55c6343e36b55afd7020ba973e3ccd41849db1433988cf6f"
     },
     {
       "file": "guangliang-offline.html",

@@ -63,31 +63,110 @@ function orb(key,x,y,r,t,style='soft'){
  art(key,0,0,r*1.17,0);ctx.restore()
 }
 function ribbon(t,words,y,size=110,color=ink,offset=0){ctx.save();ctx.translate(-((t*92+offset)%950),y);for(let i=-1;i<4;i++)text(words,i*950,0,size,color,900);ctx.restore()}
-function popBackground(color,t){ctx.fillStyle=color;ctx.fillRect(0,0,W,H);ctx.save();ctx.globalAlpha=.13;circle(1470+Math.sin(t*.6)*100,540,640,cream);circle(100,1000,500,'#ff00b0');ctx.restore()}
+// Complete-figure framing is deliberate: head/bust sprites are not used in this version.
+function fullFigure(key,box,angle=0,alpha=1){
+ const a=img[key],ratio=a.width/a.height,c=Math.abs(Math.cos(angle)),s=Math.abs(Math.sin(angle));
+ const h=Math.min(box.w/(ratio*c+s),box.h/(c+ratio*s))*.96;
+ const bw=h*(ratio*c+s),bh=h*(c+ratio*s),x=box.x+box.w/2,y=box.y+box.h/2;
+ window.__figures.push({key,left:x-bw/2,top:y-bh/2,right:x+bw/2,bottom:y+bh/2,frame:{...box}});
+ art(key,x,y,h,angle,alpha);
+}
+function flower(x,y,r,petals,angle,color,stroke=null){
+ ctx.save();ctx.translate(x,y);ctx.rotate(angle);ctx.beginPath();
+ for(let i=0;i<=240;i++){const a=i*TAU/240,q=r*(.88+.12*Math.cos(a*petals)),px=Math.cos(a)*q,py=Math.sin(a)*q;if(!i)ctx.moveTo(px,py);else ctx.lineTo(px,py)}
+ ctx.closePath();ctx.fillStyle=color;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=3;ctx.stroke()}ctx.restore();
+}
+function patternBand(t,y,kind='tri',color=ink){
+ ctx.save();ctx.beginPath();ctx.rect(64,y,1792,42);ctx.clip();ctx.fillStyle=color;
+ const shift=(t*30)%64;
+ for(let x=32-shift;x<1900;x+=64){
+  if(kind==='tri'){ctx.beginPath();ctx.moveTo(x,y+38);ctx.lineTo(x+24,y+4);ctx.lineTo(x+48,y+38);ctx.closePath();ctx.fill()}
+  else{ctx.fillRect(x,y,30,20);ctx.fillRect(x+30,y+20,30,20)}
+ }
+ ctx.restore();
+}
+function geometricSeal(word,x,y,r,t,light=cream){
+ flower(x,y,r,12,t*.11,light,ink);circle(x,y,r*.74,null,ink,2);text(word,x,y+9,23,ink,800,'center');
+}
+function confetti(x,y,u,t){
+ for(let i=0;i<18;i++){
+  const life=(u*.72+i*.13)%2.5,k=life/2.5,a=i*2.399+Math.sin(i)*.2;
+  const px=x+Math.cos(a)*(25+life*57),py=y+Math.sin(a)*(25+life*57)-life*22;
+  ctx.save();ctx.globalAlpha=(1-k)*.72;ctx.translate(px,py);ctx.rotate(t*.6+i);
+  ctx.fillStyle=[cream,'#ffe336','#7ce7d6','#ff4dc1'][i%4];
+  if(i%3===0){ctx.beginPath();ctx.moveTo(0,-7);ctx.lineTo(7,6);ctx.lineTo(-7,6);ctx.closePath();ctx.fill()}
+  else if(i%3===1)ctx.fillRect(-3,-8,6,16);else circle(0,0,4,ctx.fillStyle);
+  ctx.restore();
+ }
+}
+function popBackground(color,t){
+ ctx.fillStyle=color;ctx.fillRect(0,0,W,H);
+ ctx.save();ctx.globalAlpha=.16;
+ flower(1430+Math.sin(t*.23)*70,480,610,7,t*.045,cream);
+ flower(195,830,350,8,-t*.06,'#ff31bc');
+ ctx.restore();
+ ctx.save();ctx.globalAlpha=.14;
+ for(let i=0;i<12;i++){const x=90+i*153;circle(x,150+16*Math.sin(t*.65+i),4,ink)}
+ patternBand(t,970,'checker',cream);ctx.restore();
+}
 function popHero(u,d,t){
- popBackground('#7661f4',t);let en=ease(u/1.0);ctx.save();ctx.translate(960,540);ctx.rotate(Math.sin(t*.4)*.035);circle(0,0,700*en,'#ffb727');ctx.restore();
- art('dragon',300-260*(1-en),670+Math.sin(t*2)*12,760,-.11);art('tiger',1610+260*(1-en),650+Math.sin(t*2+1)*14,730,.1);
- art('god',960,545+50*(1-en),900*en,Math.sin(t)*.02);
- rr(610,175,700,116,58,ink);text('光 亮',960,263,92,cream,900,'center');
- text('一盏龙虎灯，守一村灯火与人。',960,943,40,ink,900,'center');
- sticker('一起点亮',1520,232,112,Math.sin(t*.5)*.1-.15,'#ff87c9');header(t,ink);
- text('FOLKLORE, MADE PLAYABLE.',72,1030,17,ink,800);text('01 / 撞色游艺',1848,1030,17,ink,700,'right');
+ popBackground('#7861ef',t);ctx.save();ctx.globalAlpha=.19;patternBand(t,112,'tri',cream);ctx.restore();const en=ease(u/.9),pulse=Math.pow(Math.max(0,Math.sin(t*TAU*116/60)),6);
+ flower(960,565,415+8*pulse,9,t*.085,'#ffb92e');
+ flower(960,565,338,12,-t*.05,'#ffcf53');
+ circle(960,565,283,null,ink,2);
+ for(let i=0;i<16;i++){const a=i*TAU/16+t*.08;line(960+Math.cos(a)*293,565+Math.sin(a)*293,960+Math.cos(a)*311,565+Math.sin(a)*311,ink,2)}
+ // Flat stages ground the complete robes; no title or sticker covers a face.
+ ctx.save();ctx.globalAlpha=.22;ctx.fillStyle=ink;
+ for(const x of [410,1500]){ctx.beginPath();ctx.ellipse(x,963,170,24,0,0,TAU);ctx.fill()}ctx.restore();
+ fullFigure('dragon',{x:225,y:205+Math.sin(t*1.6)*7,w:370,h:740},-.025+Math.sin(t*.7)*.012,en);
+ fullFigure('tiger',{x:1273,y:220+Math.sin(t*1.5+1)*7,w:445,h:725},.025+Math.sin(t*.65)*.012,en);
+ rr(758,302+26*(1-en),404,64,32,ink);text('一 盏 龙 虎 灯',960,345+26*(1-en),26,cream,800,'center');
+ ctx.save();ctx.translate(960,0);ctx.scale(.92+.08*en,.92+.08*en);text('光 亮',0,566,218,ink,900,'center');ctx.restore();
+ text('LIGHT / PLAY / FOLKLORE',960,632,19,ink,800,'center');
+ line(755,676,1165,676,ink,2);text('让传统故事，在指尖醒来。',960,731,29,ink,700,'center');
+ rr(652,824,616,81,40,cream,ink,3);text('守一村灯火与人',960,877,37,ink,800,'center');
+ geometricSeal('一起点亮',1735,200,80,t,'#ff8bca');
+ geometricSeal('龙虎相护',160,204,72,-t,'#8de6d4');
+ text('青龙相护',410,1008,20,cream,700,'center');text('白额虎同行',1500,1008,20,cream,700,'center');
+ header(t);text('FOLKLORE, MADE PLAYABLE.',72,1051,14,cream,700);text('01 / 撞色游艺 · 视觉增强版',1848,1051,14,cream,700,'right');
 }
 function popGame(s,u,t){
- popBackground(s.bg,t);header(t);const en=ease(u/.65);text(s.no,88,285,172,cream,900);text(s.label,285+70*(1-en),232,76,ink,900);text(s.sub,292,290,26,ink,500);
- ctx.save();ctx.translate(0,70*(1-en));videoCard(s.key,360,330,1200,675,Math.sin(t*.6)*.006,'pop');ctx.restore();
- // The game frame keeps its original proportions and all controls visible.
- ctx.save();ctx.translate(0,-115);ctx.restore();
- sticker(s.key==='medicine'?'草木成丸':s.key==='defense'?'守到天明':'亲手参与',1738,320,104,Math.sin(t)*.05+.08);
- art(s.key==='defense'?'headTiger':'headDragon',143+Math.sin(t)*12,715,230,-.12);
- text('实机演示剪辑 · 部分片段加速',72,1030,16,ink,500);
+ popBackground(s.bg,t);header(t);const en=ease(u/.65);
+ text(s.no,76,261,148,cream,900);text(s.label,273+30*(1-en),224,70,ink,900);text(s.sub,280,278,25,ink,500);
+ // Kinetic card stack; the gameplay keeps its full aspect ratio and controls.
+ ctx.save();ctx.translate(960,658);ctx.rotate(-.024+Math.sin(t*.7)*.006);
+ rr(-555,-306,1130,650,20,cream,ink,2);ctx.restore();
+ ctx.save();ctx.translate(0,30*(1-en));videoCard(s.key,400,330,1120,630,Math.sin(t*.6)*.004,'pop');ctx.restore();
+ const key=s.key==='defense'?'tiger':'dragon';
+ rr(65,410,270,539,26,cream,ink,3);
+ ctx.save();ctx.globalAlpha=.14;circle(200,660,122,s.key==='defense'?'#ffbb35':'#34cbbb');ctx.restore();
+ text(s.key==='defense'?'白 额 虎':'青 龙',200,462,22,ink,800,'center');
+ fullFigure(key,{x:87,y:488+Math.sin(t*1.7)*5,w:226,h:408},Math.sin(t*.8)*.022);
+ line(102,911,298,911,ink,1);text('一路相护',200,938,19,ink,600,'center');
+ geometricSeal(s.key==='medicine'?'草木成丸':s.key==='defense'?'守到天明':'亲手参与',1714,386,95,t);
+ confetti(1714,642,u,t);
+ flower(1720,795,91,6,t*.22,'#ffe044',ink);
+ circle(1720,795,52,null,ink,2);
+ ctx.save();ctx.translate(1720,795);ctx.rotate(-t*.35);
+ for(let i=0;i<4;i++){const a=i*Math.PI/2;line(Math.cos(a)*20,Math.sin(a)*20,Math.cos(a)*67,Math.sin(a)*67,ink,4)}ctx.restore();
+ text('采 · 制 · 扎 · 守',1714,940,17,ink,700,'center');
+ text('实机演示剪辑 · 部分片段加速',72,1048,15,ink,500);
 }
 function popEnd(u,d,t){
- popBackground(u<2?'#ff7bc6':'#ff9d27',t);const e=ease(u/.85);
- for(let i=0;i<10;i++){const a=i*TAU/10+t*.13;art(i%2?'headDragon':'headTiger',960+Math.cos(a)*760,520+Math.sin(a)*560,190,a*.12)}
- rr(400,180+60*(1-e),1120,690,48,cream,ink,4);text('光 亮',960,410,166,ink,900,'center');text('把故事，玩成一盏灯。',960,535,54,ink,800,'center');
- rr(730,612,460,92,46,ink);text('采药 · 济世 · 扎灯 · 守望',960,671,29,cream,700,'center');text('民俗叙事互动网页',960,788,22,ink,500,'center');
- header(t);text('GUANG LIANG / 一起点亮',960,1018,18,ink,800,'center');
+ popBackground('#ff9d2f',t);ctx.save();ctx.globalAlpha=.18;patternBand(t,118,'tri',cream);ctx.restore();const en=ease(u/.8);
+ flower(960,550,485,9,t*.055,'#ff71c3');flower(960,550,407,12,-t*.065,'#8b71f5');
+ // Stationary complete-character cards replace the cropped orbiting heads.
+ rr(70,248,322,704,26,cream,ink,3);rr(1528,248,322,704,26,cream,ink,3);
+ text('白 额 虎',231,305,24,ink,800,'center');text('青 龙',1689,305,24,ink,800,'center');
+ fullFigure('tiger',{x:91,y:350+Math.sin(t*.95)*5,w:280,h:520},-.025+Math.sin(t*.65)*.01,en);
+ fullFigure('dragon',{x:1550,y:335+Math.sin(t*.95+1)*5,w:278,h:550},.025+Math.sin(t*.7)*.01,en);
+ text('同 心 守 望',231,918,18,ink,700,'center');text('岁 岁 平 安',1689,918,18,ink,700,'center');
+ rr(450,235+24*(1-en),1020,662,40,cream,ink,4);
+ text('光 亮',960,447,157,ink,900,'center');text('把故事，玩成一盏灯。',960,559,48,ink,800,'center');
+ rr(703,634,514,88,44,ink);text('采药 · 济世 · 扎灯 · 守望',960,691,29,cream,700,'center');
+ text('民俗叙事互动网页',960,807,23,ink,500,'center');
+ geometricSeal('一起点亮',1740,161,62,t,'#8de6d4');geometricSeal('光亮',180,161,62,-t,'#ffe84d');
+ header(t);text('GUANG LIANG / 灯火相传',960,1046,18,ink,800,'center');
 }
 function softBackground(t){let g=ctx.createLinearGradient(0,0,W,H);g.addColorStop(0,'#c7f6fa');g.addColorStop(.52,'#f5ffd6');g.addColorStop(1,'#9cddcf');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);ctx.save();ctx.globalAlpha=.26;let r=ctx.createRadialGradient(440+Math.sin(t*.3)*180,540,5,540,500,760);r.addColorStop(0,'#fff');r.addColorStop(1,'rgba(255,255,255,0)');ctx.fillStyle=r;ctx.fillRect(0,0,W,H);ctx.restore()}
 function softHero(u,d,t){
@@ -136,9 +215,16 @@ function comicEnd(u,d,t){
 const drawers={popHero,popGame,popEnd,softHero,softHerbs,softGame,softEnd,comicHero,comicGame,comicEnd};
 let current='',style=1,time0=0,raf=0;
 function activate(s){if(current===s.kind+':'+s.t)return;current=s.kind+':'+s.t;Object.values(vid).forEach(v=>v.pause());if(s.key){const v=vid[s.key];v.currentTime=s.from||0;v.playbackRate=s.rate||1;v.loop=false;v.play().catch(()=>{});}}
-function render(t){const pg=programs[style],s=pg.chapters.find(s=>t>=s.t&&t<s.t+s.d)||pg.chapters.at(-1);activate(s);ctx.save();ctx.clearRect(0,0,W,H);drawers[s.kind](s.kind.endsWith('Game')?s:t-s.t,s.kind.endsWith('Game')?t-s.t:s.d,t);ctx.restore();
+function render(t){window.__figures=[];const pg=programs[style],s=pg.chapters.find(s=>t>=s.t&&t<s.t+s.d)||pg.chapters.at(-1);activate(s);ctx.save();ctx.clearRect(0,0,W,H);drawers[s.kind](s.kind.endsWith('Game')?s:t-s.t,s.kind.endsWith('Game')?t-s.t:s.d,t);ctx.restore();
  // Clean, short directional wipes echo scrolling web transitions.
- const next=pg.chapters.find(c=>c.t>s.t);if(next&&t>next.t-.16){const q=clamp((t-(next.t-.16))/.16);ctx.fillStyle=style===2?'#e6f6d8':style===3?cream:ink;ctx.fillRect(W*(1-q),0,W*q,H)}
+ const next=pg.chapters.find(c=>c.t>s.t),transition=style===1?.22:.16;
+ if(next&&t>next.t-transition){
+  const q=clamp((t-(next.t-transition))/transition);
+  if(style===1){
+   flower(960,540,2240*ease(q),10,q*.18,next.bg||'#ffb92e');
+   circle(960,540,2240*ease(q)*.84,null,cream,6);
+  }else{ctx.fillStyle=style===2?'#e6f6d8':cream;ctx.fillRect(W*(1-q),0,W*q,H)}
+ }
  const fade=clamp((pg.duration-t)/.45);if(fade<1){ctx.fillStyle=style===2?'rgba(225,245,221,'+(1-fade)+')':'rgba(18,16,22,'+(1-fade)+')';ctx.fillRect(0,0,W,H)}
  window.__progress={style,t,chapter:s.kind,key:s.key||null};
 }
