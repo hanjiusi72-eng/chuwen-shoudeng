@@ -89,6 +89,10 @@ class ForageScene extends Phaser.Scene {
       // 说明留在底边，不再弹出遮挡第三行棋盘与骰子的对白。
       this.diceHint.setText('点骰子出发');
     }
+    if (G.debugRescue) {
+      const m = G.debugRescue; G.debugRescue = null;
+      this.time.delayedCall(400, () => m === 'tiger' ? openTigerRescue(this, () => this.rescueDone('tiger')) : openDragonRescue(this, () => this.rescueDone('dragon')));
+    }
   }
   refresh() {
     const got = G.forageGot.length;
@@ -147,18 +151,35 @@ class ForageScene extends Phaser.Scene {
         this.walk(path);
       } });
   }
+  /* 救治完成后在棋盘上补画「已相逢」标记 */
+  showHealedGate(n, key) {
+    const p = cellPos(n);
+    const gl = this.add.image(p.x, p.y, 'glow').setTint(0xffd040).setScale(0.55).setAlpha(0.8).setDepth(1);
+    this.tweens.add({ targets: gl, alpha: 0.4, yoyo: true, repeat: -1, duration: 700 });
+    const im = this.add.image(p.x, p.y - 4, key).setScale(132 / this.textures.get(key).getSourceImage().height).setDepth(2);
+    im.setTint(0xffe9b0);
+    T(this, p.x, p.y + 56, '已相逢 ✔', 16, '#fff8d0', { bold: true, stroke: '#b8860b', strokeThickness: 3 }).setDepth(3);
+  }
+  /* 卡片救治完成：恢复骰子、刷新目标 */
+  rescueDone(which) {
+    this.showHealedGate(which === 'tiger' ? FORAGE_TIGER_CELL : FORAGE_DRAGON_CELL, which === 'tiger' ? 'node_tiger' : 'node_dragon');
+    this.refresh();
+    this.walking = false;
+    this.dice.setInteractive({ useHandCursor: true });
+    this.diceHint.setText('点骰子出发');
+  }
   arrive(n) {
     this.tweens.add({ targets: this.token, y: this.token.y - 8, yoyo: true, repeat: 2, duration: 160, onComplete: () => {
       if (n === FORAGE_TIGER_CELL) {
-        this.hud.setObjective('山路遇虎 · 进药庐为它配药');
+        this.hud.setObjective('山路遇虎 · 按符纸化符水为它顺喉');
         dialog(this, [{ who: 'tiger', text: '吼……别怕。我喉咙里卡了东西，咽不下也吐不出，实在没力气伤人……' },
-                      { who: 'wu', text: '虎兄莫慌。前头的药庐可以停脚——徒儿，翻开药书，为它配一剂治喉的药。' }],
-          () => goTo(this, 'Medicine', { mode: 'tiger', from: 'forage' }));
+                      { who: 'wu', text: '虎兄莫慌。就在这山石上摊开符纸，按住它化一道符水，为虎兄顺喉。' }],
+          () => openTigerRescue(this, () => this.rescueDone('tiger')));
       } else if (n === FORAGE_DRAGON_CELL) {
-        this.hud.setObjective('云雾遇龙 · 为青龙调一味明目药');
+        this.hud.setObjective('云雾遇龙 · 调药贴为它敷眼');
         dialog(this, [{ who: 'dragon', text: '是保生大帝吗……我的双眼像蒙了雾，连脚下的山路都快看不清了。' },
-                      { who: 'wu', text: '龙兄受苦了。徒儿，药书里正有一剂明目的方子，就拜托你了。' }],
-          () => goTo(this, 'Medicine', { mode: 'dragon', from: 'forage' }));
+                      { who: 'wu', text: '龙兄受苦了。取金银花、薄荷、菊花三味入罐调成药贴，为龙兄敷眼。' }],
+          () => openDragonRescue(this, () => this.rescueDone('dragon')));
       } else {
         this.hud.setObjective('药囊满了，下山！');
         dialog(this, [{ who: 'narr', text: '药囊满了！山风送来草木的清香，山下村子的炊烟已经在望。' },

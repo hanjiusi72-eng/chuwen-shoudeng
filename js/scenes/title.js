@@ -33,8 +33,8 @@ class TitleScene extends Phaser.Scene {
     c.add(T(this, W / 2, 150, '调试入口 · 注入前置状态后跳转', 22, '#9a0078', { bold: true }));
     const items = [
       ['交互 0 采药棋盘', () => ['Forage']],
-      ['交互 1A 药庐 · 治虎', () => ['Medicine', { mode: 'tiger', from: 'forage' }]],
-      ['交互 1B 药庐 · 医龙', () => { G.healedTiger = true; G.bookOpened = true; G.foragePos = 8; return ['Medicine', { mode: 'dragon', from: 'forage' }]; }],
+      ['交互 1A 治虎 · 符水', () => { G.foragePos = 7; G.debugRescue = 'tiger'; return ['Forage']; }],
+      ['交互 1B 医龙 · 药贴', () => { G.healedTiger = true; G.foragePos = 12; G.debugRescue = 'dragon'; return ['Forage']; }],
       ['交互 2A 市集', () => { G.healedTiger = G.healedDragon = true; G.bookOpened = true; G.foragePos = 14; return ['Market']; }],
       ['交互 2B 药庐济世', () => { G.healedTiger = G.healedDragon = true; G.bookOpened = true; G.foragePos = 14; ['herb', 'bamboo', 'paper', 'oil'].forEach(s => G.purchased.add(s)); return ['Medicine', { mode: 'effects' }]; }],
       ['交互 2C 木匠制灯', () => { G.carpenterRescued = G.craftUnlocked = true; return ['Craft']; }],
