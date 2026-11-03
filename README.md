@@ -45,3 +45,59 @@ lib/phaser.min.js   Phaser 3.80（本地，无需联网）
 ```
 
 所有药方只用于游戏判定，不作现实用药建议。
+
+## 本次修订
+
+按《需要改动的.docx》中的四项意见调整：
+
+- 采药棋盘完整展示 15 格，保留粉色三角纹样外框、蓝白点棋盘与右下骰子；首次说明放在底边，避免对白遮挡第三行，遇虎、遇龙的剧情仍保留。
+- 药庐济世的绿色堆状药泥改为暖杏色圆球，与原画配色协调；连续制药时恢复圆球尺寸与拖拽状态。
+- 序章人物场景改为满幅粉红几何纹样背景，保生大帝居中近景。
+- 序章村庄场景使用原始明亮背景，移除原来的暗色叠层。
+
+网页开发启动方式不变。另提供无需服务器的单文件离线交互版与三部风格呈现影片，见下方交付说明。
+
+## 浏览器验证
+
+需要 Python Playwright 和位于 `/usr/bin/chromium` 的 Chromium。先在项目目录启动服务：
+
+```sh
+python3 -m http.server 8686
+```
+
+保持服务运行，在另一个终端进入同一项目目录执行：
+
+```sh
+python3 tests/revision_smoke.py
+python3 tests/medicine_smoke.py
+```
+
+`revision_smoke.py` 的 7 项检查覆盖两处序章场景、15 格棋盘、真实点击骰子后的行走与采药、遇虎剧情，以及浏览器异常和素材加载错误。本次修订已通过这 7 项检查。
+
+`medicine_smoke.py` 通过实际拖拽完成 E1、E2 两轮配药与煎药，检查圆球外观、尺寸、拖拽状态及浏览器异常。本次 E1、E2 两轮检查均已通过；后续测试结果以当次命令正常退出和生成的报告为准。
+
+页面截图与报告写入 `/tmp/chuwen-revision-validation/`，制药截图与报告写入 `/tmp/chuwen-medicine-validation/`，不覆盖仓库美术素材。测试使用桌面 Chromium；手机触屏体验仍可另行人工复核。
+
+
+## 影片与离线交付
+
+`showcase/index.html` 是统一的观看下载页，三个版本均为 1920×1080、24 fps、H.264/AAC MP4：
+
+- `showcase/downloads/01-pop-play.mp4`：撞色游艺，36 秒，对应参考 1 的撞色插画、角色贴纸和快速切换。
+- `showcase/downloads/02-soft-orbits.mp4`：光的圆舞，44 秒，对应参考 2 的浅色渐变、圆形元素和柔和动效。
+- `showcase/downloads/03-lantern-story.mp4`：灯火长卷，60 秒，对应参考 3 的漫画分镜和连续叙事。
+
+影片使用修订网页的真实交互录屏与本项目美术进行动效剪辑，部分操作加速；配乐为原创合成音频，不含参考视频画面或音乐。
+
+`showcase/downloads/guangliang-complete.zip` 包含三部影片、离线游戏和“打开这里.html”。Mac 解压后双击该页面即可选择观看或游玩。单独的游戏包为 `game-offline-mac.zip`，解压后双击 `guangliang-offline.html`，无需终端、安装或网络。
+
+离线 HTML 通过 `tools/build_offline.py` 内嵌全部 117 项图片素材和 15 段脚本。已验证单文件的采药、拖药和主要场景不需要外部素材请求；云端 Chromium 的管理策略禁止 `file://` 导航，验证时通过本地 HTTP 提供同一个文件。尚未在实体 Mac/Safari 上测试。
+
+本地检查观看/下载页时，需要支持 HTTP Range 的服务：
+
+```sh
+python3 tools/serve_render.py . 8689
+python3 tests/showcase_smoke.py
+```
+
+离线文件的浏览器检查：保持 8686 静态服务运行，执行 `python3 tests/offline_smoke.py`。原网页功能检查仍见上文。

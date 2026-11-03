@@ -1,9 +1,9 @@
 /* 交互 0：掷骰子采药棋盘（15 格蛇形山路；第 8 格遇虎、13 格遇龙、14 格出山） */
-const FORAGE_SX = W / 1440;                       // 参考稿 1440 宽 → 1334
-const FORAGE_DY = 0;                              // 参考稿即全屏棋盘，不再下移
+const FORAGE_SX = W / 1440 * 0.94;
+const FORAGE_DX = 60, FORAGE_DY = 14;
 const cellPos = n => {                            // 参考稿坐标：x=254+col*232.5, y=[227,449,675]
   const row = Math.floor(n / 5), col = row === 1 ? 4 - n % 5 : n % 5;
-  return { x: (254 + col * 232.5) * FORAGE_SX, y: ([227, 449, 675][row] - 60) * FORAGE_SX + FORAGE_DY };
+  return { x: (254 + col * 232.5) * FORAGE_SX + FORAGE_DX, y: ([227, 449, 675][row] - 60) * FORAGE_SX + FORAGE_DY };
 };
 /* 轻量状态胶囊：参考稿为满屏棋盘，不用整条顶栏，只留左上目标 + 右上计数 */
 function forageChip(scene) {
@@ -31,13 +31,14 @@ class ForageScene extends Phaser.Scene {
     BGM.setMode('festive');
     const bg = this.add.tileSprite(W / 2, H / 2, W, H, 'forage_pattern');
     bg.setTileScale(136 / 300, 236 / 520);
-    this.add.image(W / 2, H / 2 + 2 + FORAGE_DY, 'forage_base').setDisplaySize(1232, 715);
-    this.add.image(W / 2, H / 2 + 2 + FORAGE_DY, 'forage_cells').setDisplaySize(W, H);
+    // 给棋盘四周留出参考稿中的三角纹样边框，15 格始终完整可见。
+    this.add.image(695, 367, 'forage_base').setDisplaySize(1104, 642);
+    this.add.image(W / 2 * 0.94 + FORAGE_DX, H / 2 * 0.94 + FORAGE_DY, 'forage_cells').setDisplaySize(W * 0.94, H * 0.94);
 
     // 蛇形山路（粉色路线，与棋盘格同心）
     const rt = this.add.graphics();
     const yT = cellPos(0).y, yM = cellPos(5).y, yB = cellPos(10).y;
-    const xL = cellPos(0).x, xR = cellPos(4).x, cR = 1370 * FORAGE_SX, cL = 70 * FORAGE_SX;
+    const xL = cellPos(0).x, xR = cellPos(4).x, cR = 1370 * FORAGE_SX + FORAGE_DX, cL = 70 * FORAGE_SX + FORAGE_DX;
     const cubic = (p0, c1, c2, p1) => { rt.beginPath(); rt.moveTo(p0.x, p0.y); for (let i = 1; i <= 26; i++) { const t = i / 26, u = 1 - t; rt.lineTo(u ** 3 * p0.x + 3 * u * u * t * c1.x + 3 * u * t * t * c2.x + t ** 3 * p1.x, u ** 3 * p0.y + 3 * u * u * t * c1.y + 3 * u * t * t * c2.y + t ** 3 * p1.y); } rt.strokePath(); };
     rt.lineStyle(8, 0xff39b5, 0.95);
     rt.beginPath(); rt.moveTo(xL, yT); rt.lineTo(xR, yT); rt.strokePath();
@@ -50,14 +51,14 @@ class ForageScene extends Phaser.Scene {
     Object.entries(FORAGE_HERB_AT).forEach(([n, id]) => {
       const p = cellPos(+n);
       const got = G.forageGot.includes(id);
-      const im = this.add.image(p.x, p.y - 6, 'board_' + id).setScale(108 / Math.max(80, this.textures.get('board_' + id).getSourceImage().height));
+      const im = this.add.image(p.x, p.y - 6, 'board_' + id).setScale(102 / Math.max(80, this.textures.get('board_' + id).getSourceImage().height));
       im.setAlpha(got ? 0.25 : 1);
       if (got) { T(this, p.x, p.y + 52, HERB[id].name, 16, '#118a5a', { bold: true }); const k = this.add.image(p.x, p.y - 6, 'spark').setScale(1.1); k.setTint(0x118a5a); }
     });
     const markGate = (n, key, ok) => {
       const p = cellPos(n);
       if (ok) { const gl = this.add.image(p.x, p.y, 'glow').setTint(0xffd040).setScale(0.55).setAlpha(0.8); this.tweens.add({ targets: gl, alpha: 0.4, yoyo: true, repeat: -1, duration: 700 }); }
-      const im = this.add.image(p.x, p.y - 4, key).setScale(148 / this.textures.get(key).getSourceImage().height);
+      const im = this.add.image(p.x, p.y - 4, key).setScale(132 / this.textures.get(key).getSourceImage().height);
       if (ok) { im.setTint(0xffe9b0); T(this, p.x, p.y + 56, '已相逢 ✔', 16, '#b8860b', { bold: true }); }
       return im;
     };
@@ -66,17 +67,17 @@ class ForageScene extends Phaser.Scene {
 
     // 保生大帝棋子
     const p0 = cellPos(G.foragePos);
-    this.token = this.add.image(p0.x, p0.y + 48, 'token_god').setOrigin(0.5, 1).setDisplaySize(112, 192).setDepth(50);
-    this.tweens.add({ targets: this.token, y: p0.y + 42, yoyo: true, repeat: -1, duration: 1500, ease: 'Sine.inOut' });
+    this.token = this.add.image(p0.x, p0.y + 38, 'token_god').setOrigin(0.5, 1).setDisplaySize(100, 148).setDepth(50);
+    this.tweens.add({ targets: this.token, y: p0.y + 32, yoyo: true, repeat: -1, duration: 1500, ease: 'Sine.inOut' });
 
     // 骰子
     this.diceVal = 5;
-    this.dice = this.add.image(1214, 646, 'vdice5').setDisplaySize(118, 118).setDepth(60).setInteractive({ useHandCursor: true });
+    this.dice = this.add.image(1220, 668, 'vdice5').setDisplaySize(118, 118).setDepth(60).setInteractive({ useHandCursor: true });
     this.diceS = this.dice.scale;
     this.dice.on('pointerup', () => this.roll());
     this.tweens.add({ targets: this.dice, angle: { from: -4, to: 4 }, yoyo: true, repeat: -1, duration: 900, ease: 'Sine.inOut' });
-    this.diceHint = T(this, 1214, 720, '点骰子出发', 16, '#fff8d0', { bold: true, stroke: '#8a005e', strokeThickness: 4 });
-    T(this, 84, 722, '路过草丛顺手采 · 停下才算进站', 16, '#fff8d0', { sans: true, stroke: '#8a005e', strokeThickness: 4, ox: 0 });
+    this.diceHint = T(this, 1220, 736, '点骰子出发', 14, '#fff8d0', { bold: true, stroke: '#8a005e', strokeThickness: 4 });
+    T(this, 84, 722, '掷骰前进 · 路过采药 · 遇见龙虎停下相助', 16, '#fff8d0', { sans: true, stroke: '#8a005e', strokeThickness: 4, ox: 0 });
 
     this.hud = forageChip(this);
     muteButton(this);
@@ -85,10 +86,8 @@ class ForageScene extends Phaser.Scene {
 
     if (!G.foragePos && !G.forageGot.length && !this._intro) {
       this._intro = true;
-      this.time.delayedCall(400, () => dialog(this, [
-        { who: 'wu', text: '山路的药草，就长在这一格一格的草丛里。掷骰子，走到哪儿，采到哪儿。' },
-        { who: 'wu', text: '听说山里还有两位旧识受了苦——若在路上遇见，记得伸手相助。' }
-      ]));
+      // 说明留在底边，不再弹出遮挡第三行棋盘与骰子的对白。
+      this.diceHint.setText('点骰子出发');
     }
   }
   refresh() {
@@ -131,7 +130,7 @@ class ForageScene extends Phaser.Scene {
     const n = path.shift();
     const p = cellPos(n);
     this.tweens.killTweensOf(this.token);
-    this.tweens.add({ targets: this.token, x: p.x, y: p.y + 48, duration: 430, ease: 'Sine.inOut',
+    this.tweens.add({ targets: this.token, x: p.x, y: p.y + 38, duration: 430, ease: 'Sine.inOut',
       onUpdate: () => { if (Math.random() < 0.12) SFX.step(); },
       onComplete: () => {
         G.foragePos = n;

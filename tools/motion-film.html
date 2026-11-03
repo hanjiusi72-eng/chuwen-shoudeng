@@ -1,0 +1,148 @@
+<!doctype html><meta charset="utf-8"><title>光亮 · Film Render</title><link rel="icon" href="data:,">
+<style>html,body{margin:0;background:#121214;overflow:hidden}canvas{display:block;width:100vw;height:100vh;object-fit:contain}</style><canvas width="1920" height="1080"></canvas>
+<script>
+'use strict';
+const cv=document.querySelector('canvas'),ctx=cv.getContext('2d',{alpha:false});
+const W=1920,H=1080,TAU=Math.PI*2,cream='#fff2d9',ink='#17151c';
+const img={},vid={};
+const paths={god:'char_baosheng.png',dragon:'char_dragon.png',tiger:'char_tiger.png',headGod:'head_baosheng.png',headDragon:'head_dragon.png',headTiger:'head_tiger.png',pattern:'bg_pattern.jpg',village:'bg_village.jpg',night:'bg_village_night.jpg',dragonMark:'pattern_dragon.png',tigerMark:'pattern_tiger.png',circle:'v2/herb_circle.png',dice:'v2/vdice5.png',herb0:'v2/med_bohe.png',herb1:'v2/med_jinyinhua.png',herb2:'v2/med_juhua.png',herb3:'v2/med_gancao.png',herb4:'v2/med_lianqiao.png',herb5:'v2/med_maidong.png'};
+const programs={
+  1:{duration:36,chapters:[
+    {t:0,d:5,kind:'popHero'},
+    {t:5,d:4.5,kind:'popGame',key:'forage',label:'掷骰，入山。',sub:'每一步，都有草木的回音。',no:'01',from:.2,rate:1.7,bg:'#ff8d20'},
+    {t:9.5,d:5.5,kind:'popGame',key:'medicine',label:'四味，济世。',sub:'让一丸药香，温暖一村人。',no:'02',from:27,rate:1.8,bg:'#ff73c7'},
+    {t:15,d:4.5,kind:'popGame',key:'craft',label:'扎一盏光。',sub:'圈架、竖骨、棉纸，把手艺留在指尖。',no:'03',from:30,rate:5,bg:'#ffbe35'},
+    {t:19.5,d:4.5,kind:'popGame',key:'defense',label:'守一夜灯。',sub:'拖动引路灯，陪村庄等到天明。',no:'04',from:3,rate:2.5,bg:'#7963f2'},
+    {t:24,d:5,kind:'popGame',key:'decorate',label:'画一份平安。',sub:'龙虎落笔，心愿成灯。',no:'05',from:154,rate:3.2,bg:'#ff73c7'},
+    {t:29,d:7,kind:'popEnd'}]},
+  2:{duration:44,chapters:[
+    {t:0,d:6,kind:'softHero'},
+    {t:6,d:4,kind:'softHerbs'},
+    {t:10,d:7,kind:'softGame',key:'forage',label:'采药 · 山路的节律',sub:'掷骰前行，让十五格山路慢慢展开。',no:'01',from:.1,rate:1.1},
+    {t:17,d:7,kind:'softGame',key:'medicine',label:'济世 · 药香成圆',sub:'圆润的药泥，把草木化作一份照顾。',no:'02',from:26,rate:1.7},
+    {t:24,d:6,kind:'softGame',key:'craft',label:'扎灯 · 手艺的温度',sub:'一层棉纸，一点灯油，一盏即将醒来的灯。',no:'03',from:32,rate:4.3},
+    {t:30,d:6,kind:'softGame',key:'defense',label:'守望 · 光的边界',sub:'不让一盏灯，独自留在夜里。',no:'04',from:4,rate:2.3},
+    {t:36,d:8,kind:'softEnd'}]},
+  3:{duration:60,chapters:[
+    {t:0,d:6,kind:'comicHero'},
+    {t:6,d:5,kind:'comicGame',key:'prologue',label:'有一位医者，',sub:'走向需要他的地方。',no:'序',from:0,rate:.8,bg:'#ef91bb'},
+    {t:11,d:4,kind:'comicGame',key:'village',label:'有一座村庄，',sub:'正等一锅热热的汤药。',no:'一',from:0,rate:.7,bg:'#f9dc65'},
+    {t:15,d:7,kind:'comicGame',key:'forage',label:'于是，入山。',sub:'掷骰、采药，与龙虎相逢。',no:'二',from:.1,rate:1.05,bg:'#f19bc3'},
+    {t:22,d:8,kind:'comicGame',key:'medicine',label:'把草木的心意，',sub:'捣成药，煎成汤。',no:'三',from:25,rate:1.8,bg:'#ee8d45'},
+    {t:30,d:7,kind:'comicGame',key:'craft',label:'再扎起一盏灯，',sub:'一圈一骨，一纸一芯。',no:'四',from:15,rate:6,bg:'#f6d589'},
+    {t:37,d:7,kind:'comicGame',key:'defense',label:'把夜，守成光。',sub:'灯火不灭，家就在。',no:'五',from:3,rate:2.7,bg:'#15141a',dark:true},
+    {t:44,d:7,kind:'comicGame',key:'decorate',label:'把平安，画上灯。',sub:'落笔成纹，题字成愿。',no:'六',from:152,rate:2.7,bg:'#e990bd'},
+    {t:51,d:5,kind:'comicGame',key:'ending',label:'光，回到人间。',sub:'每一次参与，都让灯火继续。',no:'终',from:0,rate:1,bg:'#f6dfb3'},
+    {t:56,d:4,kind:'comicEnd'}]}
+};
+const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
+const ease=v=>1-Math.pow(1-clamp(v),3);
+const smooth=v=>{v=clamp(v);return v*v*(3-2*v)};
+function rr(x,y,w,h,r,fill,stroke,lw=2){ctx.beginPath();ctx.roundRect(x,y,w,h,r);if(fill){ctx.fillStyle=fill;ctx.fill()}if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=lw;ctx.stroke()}}
+function line(x,y,a,b,c,w=2){ctx.strokeStyle=c;ctx.lineWidth=w;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(a,b);ctx.stroke()}
+function text(str,x,y,size=32,color=ink,weight=500,align='left',family='"Noto Sans CJK SC",sans-serif'){
+ ctx.fillStyle=color;ctx.font=`${weight} ${size}px ${family}`;ctx.textAlign=align;ctx.textBaseline='alphabetic';ctx.fillText(str,x,y)
+}
+function circle(x,y,r,fill,stroke,w=2){ctx.beginPath();ctx.arc(x,y,r,0,TAU);if(fill){ctx.fillStyle=fill;ctx.fill()}if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=w;ctx.stroke()}}
+function art(key,x,y,h,angle=0,alpha=1){let a=img[key];if(!a)return;ctx.save();ctx.globalAlpha=alpha;ctx.translate(x,y);ctx.rotate(angle);ctx.drawImage(a,-a.width/a.height*h/2,-h/2,a.width/a.height*h,h);ctx.restore()}
+function contain(a,x,y,w,h){if(!a)return;const aw=a.videoWidth||a.width,ah=a.videoHeight||a.height;if(!aw||!ah)return;const s=Math.min(w/aw,h/ah);ctx.drawImage(a,x+(w-aw*s)/2,y+(h-ah*s)/2,aw*s,ah*s)}
+function cover(a,x,y,w,h){const aw=a.videoWidth||a.width,ah=a.videoHeight||a.height;const s=Math.max(w/aw,h/ah);ctx.save();ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();ctx.drawImage(a,x+(w-aw*s)/2,y+(h-ah*s)/2,aw*s,ah*s);ctx.restore()}
+function sticker(word,x,y,r,t,color=cream){ctx.save();ctx.translate(x,y);ctx.rotate(t);ctx.beginPath();for(let i=0;i<36;i++){const a=i*TAU/36,rad=i%2?r:r*.87;const px=Math.cos(a)*rad,py=Math.sin(a)*rad;if(!i)ctx.moveTo(px,py);else ctx.lineTo(px,py)}ctx.closePath();ctx.fillStyle=color;ctx.fill();ctx.strokeStyle=ink;ctx.lineWidth=3;ctx.stroke();text(word,0,10,27,ink,900,'center');ctx.restore()}
+function header(t,color=ink,soft=false){text('光亮 · 龙虎灯',72,58,22,color,800);text('GUANG LIANG',960,54,22,color,900,'center');text('INTERACTIVE STORY',1848,56,16,color,600,'right');line(72,81,1848,81,color,1);if(soft)text('民俗叙事 / 指尖参与',72,1035,18,color,500);}
+function videoCard(key,x,y,w,h,angle=0,theme='pop',label=true){
+ ctx.save();ctx.translate(x+w/2,y+h/2);ctx.rotate(angle);ctx.shadowColor='rgba(20,10,30,.19)';ctx.shadowBlur=25;ctx.shadowOffsetY=16;
+ rr(-w/2-12,-h/2-32,w+24,h+52,theme==='comic'?2:20,theme==='comic'?cream:'#fff8ef',theme==='comic'?ink:null,4);ctx.shadowBlur=0;ctx.shadowOffsetY=0;
+ if(label){circle(-w/2+13,-h/2-13,4,'#ff81a6');circle(-w/2+28,-h/2-13,4,'#ebc73b');circle(-w/2+43,-h/2-13,4,'#7bbd9d');text('光亮 · 新版实机交互',w/2-10,-h/2-7,13,'#766d72',500,'right')}
+ rr(-w/2,-h/2,w,h,theme==='comic'?0:7,ink);ctx.save();ctx.beginPath();ctx.roundRect(-w/2,-h/2,w,h,theme==='comic'?0:7);ctx.clip();contain(vid[key],-w/2,-h/2,w,h);ctx.restore();ctx.restore()
+}
+function orb(key,x,y,r,t,style='soft'){
+ ctx.save();ctx.translate(x,y);ctx.rotate(t);ctx.shadowColor='rgba(24,74,70,.12)';ctx.shadowBlur=18;
+ circle(0,0,r,'rgba(255,255,255,.65)',style==='soft'?'rgba(34,93,86,.25)':ink,2);ctx.shadowBlur=0;
+ circle(0,0,r*.89,null,style==='soft'?'#8ecbc2':'#ff69c5',3);circle(0,0,r*.76,null,style==='soft'?'#c4e9d1':'#ffbe35',8);
+ for(let i=0;i<48;i++){const a=i*TAU/48;line(Math.cos(a)*r*.91,Math.sin(a)*r*.91,Math.cos(a)*r*.98,Math.sin(a)*r*.98,style==='soft'?'#80b8b0':ink,i%4===0?2:1)}
+ art(key,0,0,r*1.17,0);ctx.restore()
+}
+function ribbon(t,words,y,size=110,color=ink,offset=0){ctx.save();ctx.translate(-((t*92+offset)%950),y);for(let i=-1;i<4;i++)text(words,i*950,0,size,color,900);ctx.restore()}
+function popBackground(color,t){ctx.fillStyle=color;ctx.fillRect(0,0,W,H);ctx.save();ctx.globalAlpha=.13;circle(1470+Math.sin(t*.6)*100,540,640,cream);circle(100,1000,500,'#ff00b0');ctx.restore()}
+function popHero(u,d,t){
+ popBackground('#7661f4',t);let en=ease(u/1.0);ctx.save();ctx.translate(960,540);ctx.rotate(Math.sin(t*.4)*.035);circle(0,0,700*en,'#ffb727');ctx.restore();
+ art('dragon',300-260*(1-en),670+Math.sin(t*2)*12,760,-.11);art('tiger',1610+260*(1-en),650+Math.sin(t*2+1)*14,730,.1);
+ art('god',960,545+50*(1-en),900*en,Math.sin(t)*.02);
+ rr(610,175,700,116,58,ink);text('光 亮',960,263,92,cream,900,'center');
+ text('一盏龙虎灯，守一村灯火与人。',960,943,40,ink,900,'center');
+ sticker('一起点亮',1520,232,112,Math.sin(t*.5)*.1-.15,'#ff87c9');header(t,ink);
+ text('FOLKLORE, MADE PLAYABLE.',72,1030,17,ink,800);text('01 / 撞色游艺',1848,1030,17,ink,700,'right');
+}
+function popGame(s,u,t){
+ popBackground(s.bg,t);header(t);const en=ease(u/.65);text(s.no,88,285,172,cream,900);text(s.label,285+70*(1-en),232,76,ink,900);text(s.sub,292,290,26,ink,500);
+ ctx.save();ctx.translate(0,70*(1-en));videoCard(s.key,360,330,1200,675,Math.sin(t*.6)*.006,'pop');ctx.restore();
+ // The game frame keeps its original proportions and all controls visible.
+ ctx.save();ctx.translate(0,-115);ctx.restore();
+ sticker(s.key==='medicine'?'草木成丸':s.key==='defense'?'守到天明':'亲手参与',1738,320,104,Math.sin(t)*.05+.08);
+ art(s.key==='defense'?'headTiger':'headDragon',143+Math.sin(t)*12,715,230,-.12);
+ text('实机演示剪辑 · 部分片段加速',72,1030,16,ink,500);
+}
+function popEnd(u,d,t){
+ popBackground(u<2?'#ff7bc6':'#ff9d27',t);const e=ease(u/.85);
+ for(let i=0;i<10;i++){const a=i*TAU/10+t*.13;art(i%2?'headDragon':'headTiger',960+Math.cos(a)*760,520+Math.sin(a)*560,190,a*.12)}
+ rr(400,180+60*(1-e),1120,690,48,cream,ink,4);text('光 亮',960,410,166,ink,900,'center');text('把故事，玩成一盏灯。',960,535,54,ink,800,'center');
+ rr(730,612,460,92,46,ink);text('采药 · 济世 · 扎灯 · 守望',960,671,29,cream,700,'center');text('民俗叙事互动网页',960,788,22,ink,500,'center');
+ header(t);text('GUANG LIANG / 一起点亮',960,1018,18,ink,800,'center');
+}
+function softBackground(t){let g=ctx.createLinearGradient(0,0,W,H);g.addColorStop(0,'#c7f6fa');g.addColorStop(.52,'#f5ffd6');g.addColorStop(1,'#9cddcf');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);ctx.save();ctx.globalAlpha=.26;let r=ctx.createRadialGradient(440+Math.sin(t*.3)*180,540,5,540,500,760);r.addColorStop(0,'#fff');r.addColorStop(1,'rgba(255,255,255,0)');ctx.fillStyle=r;ctx.fillRect(0,0,W,H);ctx.restore()}
+function softHero(u,d,t){
+ softBackground(t);header(t,'#173d38',true);const e=ease(u/1.4);
+ text('一 点 光',120,350,112,'#173d38',900);text('一 圈 回 响',120,480,98,'#173d38',900);text('让传统故事，在指尖缓缓展开。',126,559,28,'#315c54',500);
+ const ringX=1330+150*(1-e);orb('dragonMark',ringX,560,305,t*.15);orb('tigerMark',ringX-335,730,170,-t*.18);orb('herb1',ringX+330,283,140,t*.2);
+ text('LIGHT, IN MOTION',126,750,19,'#315c54',700);line(126,784,610,784,'#62988b',1);text('采药 / 制药 / 制灯 / 守望',126,827,22,'#315c54',500);
+ for(let i=0;i<6;i++)circle(1000+i*95,990,5,i===Math.floor(t)%6?'#173d38':'rgba(23,61,56,.2)');
+}
+function softHerbs(u,d,t){softBackground(t);header(t,'#173d38',true);text('草木有方，照顾有形。',960,245,68,'#173d38',900,'center');text('每一味草药，都是故事里的一次相助。',960,320,26,'#315c54',500,'center');for(let i=0;i<6;i++){const a=i*TAU/6+t*.2;orb('herb'+i,960+Math.cos(a)*590,650+Math.sin(a)*155,112+25*Math.sin(a),a*.3)}text('薄荷 · 金银花 · 菊花 · 甘草 · 连翘 · 麦冬',960,961,24,'#315c54',600,'center')}
+function softGame(s,u,t){
+ softBackground(t);header(t,'#173d38',true);const e=ease(u/.9);
+ orb(s.key==='medicine'?'herb1':s.key==='forage'?'herb0':'dragonMark',150,215,61,t*.2);text(s.label,255,195,49,'#173d38',900);text(s.sub,255,244,25,'#315c54',500);text(s.no,1810,220,64,'#467a6c',500,'right');
+ ctx.save();ctx.translate(100*(1-e),0);videoCard(s.key,320,300,1280,720,0,'soft');ctx.restore();
+}
+function softEnd(u,d,t){
+ softBackground(t);header(t,'#173d38',true);const e=ease(u/1.2);
+ for(let i=0;i<8;i++){const a=i*TAU/8+t*.12;orb(i%2?'tigerMark':'dragonMark',960+Math.cos(a)*860,535+Math.sin(a)*580,90+20*Math.sin(a),-a*.4)}
+ text('光 亮',960,480+65*(1-e),150,'#173d38',900,'center');text('灯火相传，平安有回声。',960,590,48,'#173d38',700,'center');
+ line(720,650,1200,650,'#467a6c');text('一盏龙虎灯 · 一场指尖的相遇',960,718,25,'#315c54',500,'center');
+}
+function paper(t,col=cream){ctx.fillStyle=col;ctx.fillRect(0,0,W,H);ctx.save();ctx.globalAlpha=.035;ctx.fillStyle=ink;for(let y=12;y<H;y+=19)for(let x=12;x<W;x+=23){ctx.beginPath();ctx.arc(x+(y%38),y,1,0,TAU);ctx.fill()}ctx.restore()}
+function comicHero(u,d,t){
+ paper(t,'#fff0db');header(t);const e=ease(u/1.0);
+ ctx.save();ctx.translate(-200*(1-e),0);rr(60,140,530,770,0,'#ef91bb',ink,5);art('dragon',326,610,700,-.07);rr(630,140,660,770,0,'#f9b143',ink,5);art('god',960,570,820,.0);rr(1330,140,530,770,0,'#7961e8',ink,5);art('tiger',1590,580,700,.07);ctx.restore();
+ rr(630,210,660,135,0,cream,ink,5);text('光 亮',960,310,105,ink,900,'center');rr(500,900,920,95,0,ink);text('一盏灯，照见一村人。',960,963,47,cream,900,'center');
+}
+function comicGame(s,u,t){
+ paper(t,s.bg);const color=s.dark?cream:ink;header(t,color);const e=ease(u/.8),end=smooth((u-s.d+.6)/.6);
+ ctx.save();ctx.translate(90*(1-e)-80*end,0);
+ rr(72,148,510,785,0,s.dark?'#29242e':cream,ink,4);text('第 '+s.no+' 章',110,224,29,color,800);line(110,258,542,258,color,2);
+ const words=s.label.replace('，','').replace('。','');
+ if(words.length>7){text(words.slice(0,5),110,400,66,color,900);text(words.slice(5),110,487,66,color,900)}else{text(words,110,420,66,color,900)}
+ // Two short lines rather than small explanatory blocks.
+ const split=Math.ceil(s.sub.length/2);text(s.sub.slice(0,split),114,592,28,color,500);text(s.sub.slice(split),114,637,28,color,500);
+ art(s.key==='craft'?'headGod':s.key==='defense'?'headTiger':'headDragon',326,797,200,Math.sin(t*.6)*.03);
+ videoCard(s.key,625,245,1220,686,Math.sin(t*.4)*.003,'comic');
+ rr(1160,958,630,50,0,s.dark?'#ffe9b9':ink);text('采药 · 济世 · 扎灯 · 守望',1475,992,25,s.dark?ink:cream,700,'center');
+ ctx.restore();text('实机演示剪辑 / 部分片段加速',72,1034,16,color,500);text('光亮 · 龙虎灯',1848,1034,18,color,700,'right');
+}
+function comicEnd(u,d,t){
+ paper(t,ink);const e=ease(u/.8);for(let i=0;i<5;i++){art(i%2?'dragon':'tiger',100+i*430,780,500,Math.sin(i+t*.5)*.03,.2)}
+ text('灯火不灭，',960,370+80*(1-e),125,cream,900,'center');text('故事继续。',960,545+80*(1-e),125,'#ff88c4',900,'center');
+ line(620,640,1300,640,cream,2);text('光亮 · 龙虎灯',960,730,42,cream,700,'center');text('一场关于相助、手艺与守望的指尖旅程',960,810,25,cream,400,'center');header(t,cream);
+}
+const drawers={popHero,popGame,popEnd,softHero,softHerbs,softGame,softEnd,comicHero,comicGame,comicEnd};
+let current='',style=1,time0=0,raf=0;
+function activate(s){if(current===s.kind+':'+s.t)return;current=s.kind+':'+s.t;Object.values(vid).forEach(v=>v.pause());if(s.key){const v=vid[s.key];v.currentTime=s.from||0;v.playbackRate=s.rate||1;v.loop=false;v.play().catch(()=>{});}}
+function render(t){const pg=programs[style],s=pg.chapters.find(s=>t>=s.t&&t<s.t+s.d)||pg.chapters.at(-1);activate(s);ctx.save();ctx.clearRect(0,0,W,H);drawers[s.kind](s.kind.endsWith('Game')?s:t-s.t,s.kind.endsWith('Game')?t-s.t:s.d,t);ctx.restore();
+ // Clean, short directional wipes echo scrolling web transitions.
+ const next=pg.chapters.find(c=>c.t>s.t);if(next&&t>next.t-.16){const q=clamp((t-(next.t-.16))/.16);ctx.fillStyle=style===2?'#e6f6d8':style===3?cream:ink;ctx.fillRect(W*(1-q),0,W*q,H)}
+ const fade=clamp((pg.duration-t)/.45);if(fade<1){ctx.fillStyle=style===2?'rgba(225,245,221,'+(1-fade)+')':'rgba(18,16,22,'+(1-fade)+')';ctx.fillRect(0,0,W,H)}
+ window.__progress={style,t,chapter:s.kind,key:s.key||null};
+}
+window.ready=(async()=>{await Promise.all(Object.entries(paths).map(([k,p])=>new Promise((ok,no)=>{const a=new Image();a.onload=()=>{img[k]=a;ok()};a.onerror=no;a.src='assets/'+p})));await Promise.all(['title','prologue','village','forage','medicine','craft','defense','decorate','ending'].map(k=>new Promise((ok,no)=>{const v=document.createElement('video');v.muted=true;v.playsInline=true;v.preload='auto';v.onloadeddata=()=>{vid[k]=v;ok()};v.onerror=()=>no(new Error('video '+k));v.src='source/'+k+'.mp4';v.load()})));window.__ready=true;render(0);return true})();
+window.preview=(s,t)=>{style=s;current='';render(t)};
+window.record=async(s)=>{await window.ready;style=s;current='';window.__chunks=[];const stream=cv.captureStream(24);const type=MediaRecorder.isTypeSupported('video/webm;codecs=vp8')?'video/webm;codecs=vp8':'video/webm';window.__rec=new MediaRecorder(stream,{mimeType:type,videoBitsPerSecond:13000000});__rec.ondataavailable=e=>__chunks.push(e.data);__rec.start(500);time0=performance.now();return await new Promise(done=>{const frame=()=>{const t=(performance.now()-time0)/1000;render(Math.min(t,programs[s].duration-.001));if(t>=programs[s].duration){__rec.onstop=async()=>{stream.getTracks().forEach(t=>t.stop());const blob=new Blob(__chunks,{type:'video/webm'});const reader=new FileReader();reader.onload=()=>done(reader.result.split(',')[1]);reader.readAsDataURL(blob)};__rec.stop();Object.values(vid).forEach(v=>v.pause());cancelAnimationFrame(raf);}else raf=requestAnimationFrame(frame)};raf=requestAnimationFrame(frame)})};
+</script>

@@ -18,13 +18,13 @@ const STORIES = {
   prologue: {
     title: '序章 · 灯与药香',
     shots: [
-      { bg: 'bg_shrine', build(s) { actor(s, 'char_baosheng', W / 2, H + 10, 640, 'up'); },
+      // 与修订稿一致：满幅粉红几何纹样，保生大帝居中近景。
+      { bg: 'bg_pattern', build(s) { actor(s, 'char_baosheng', W / 2, H, H, 'up'); },
         lines: [{ who: 'narr', text: '闽南白礁，有位医者叫吴夲。他一生悬壶行医、救人无数，人们尊称他——“保生大帝”。' },
                 { who: 'wu', text: '徒儿，你看村里屋檐下的灯，都暗了。暑气不退，病气却一家一家地传……' },
                 { who: 'wu', text: '药庐里的存药快见底了。备好药囊，随我上山采药去。听说山路不太平，路上多留心。' }] },
-      { bg: 'bg_village_dim', build(s) {
-          s.add.rectangle(W / 2, H / 2, W, H, 0x2a1030, 0.08);
-        },
+      // 保留原画的亮黄地面与蓝黄格纹，不再叠加暗色蒙版。
+      { bg: 'bg_village',
         lines: [{ who: 'narr', text: '山下的村子，家家闭户。老人们在门后咳嗽，孩子们烧得小脸通红，都在等一锅热热的汤药。' },
                 { who: 'me', text: '师父，咱们快些走！' }] }
     ],

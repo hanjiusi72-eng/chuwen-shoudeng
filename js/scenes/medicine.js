@@ -89,13 +89,29 @@ class MedicineScene extends Phaser.Scene {
     this.mortarHi = this.add.graphics();
     this.fxStatus = T(this, 800, 424, '', 18, '#ffffff', { bold: true, stroke: '#b0487c', strokeThickness: 4 });
     T(this, 560, 716, '', 18, '#ffffff', { stroke: '#b0487c', strokeThickness: 4 }).setName('fxHint');
-    // 药泥（圆球）
-    this.mud = this.add.image(800, 420, 'tool_mud').setDisplaySize(190, 127).setVisible(false).setAlpha(0).setDepth(50);
+    // 暖杏色圆球药泥：用与界面协调的奶油金、莓粉色描边替代绿色堆状素材。
+    this.makeMedicinePearlTexture();
+    this.mud = this.add.image(800, 420, 'medicine_pearl').setDisplaySize(128, 128).setVisible(false).setAlpha(0).setDepth(50);
     this.mud.setInteractive({ draggable: true, useHandCursor: true });
     Object.assign(this.mud, { kind: 'fxmud', home: { x: 800, y: 420 } });
     this.input.setDraggable(this.mud);
     this.setForgeHint('按药单选取四味药草，拖入捣药罐');
     this.bindForgeDrag();
+  }
+  makeMedicinePearlTexture() {
+    if (this.textures.exists('medicine_pearl')) return;
+    const g = this.make.graphics({ x: 0, y: 0, add: false });
+    // 保持正圆轮廓，扁平分色与药庐的民俗插画一致。
+    g.fillStyle(0xa34869, 1); g.fillCircle(80, 80, 64);
+    g.fillStyle(0xf5b86b, 1); g.fillCircle(80, 80, 60);
+    g.fillStyle(0xffd88f, 1); g.fillCircle(77, 75, 55);
+    g.fillStyle(0xffe8ae, 1); g.fillCircle(70, 67, 44);
+    g.fillStyle(0xfff7d7, 1); g.fillEllipse(56, 49, 27, 15);
+    g.fillStyle(0xe9a175, 1);
+    [[105, 92, 3], [92, 113, 2.5], [48, 93, 2.5]].forEach(([x, y, r]) => g.fillCircle(x, y, r));
+    g.lineStyle(2, 0xffffff, 0.72); g.strokeCircle(80, 80, 57);
+    g.generateTexture('medicine_pearl', 160, 160);
+    g.destroy();
   }
   fxRecipes() { return RECIPES.filter(r => r.id[0] === 'E'); }
   fxR() { return RECIPE[this.fxCurrent]; }
@@ -228,7 +244,9 @@ class MedicineScene extends Phaser.Scene {
     this.time.delayedCall(2000, () => {
       g.remove();
       this.fxPhase = 'mud';
-      this.mud.setVisible(true).setPosition(800, 540).setAlpha(0);
+      this.mud.setVisible(true).setPosition(800, 540).setDisplaySize(128, 128).setAlpha(0).setDepth(50);
+      this.mud.setInteractive({ draggable: true, useHandCursor: true });
+      this.input.setDraggable(this.mud);
       this.tweens.add({ targets: this.mud, y: 420, alpha: 1, duration: 700, ease: 'Quad.out', onComplete: () => {
         this.tweens.add({ targets: this.mud, y: 408, yoyo: true, repeat: -1, duration: 900, ease: 'Sine.inOut' });
       } });
@@ -243,7 +261,7 @@ class MedicineScene extends Phaser.Scene {
     this.busy = true; this.fxPhase = 'brewing';
     SFX.drop();
     mud.disableInteractive();
-    this.tweens.add({ targets: mud, x: 470, y: 590, displayWidth: 40, displayHeight: 26, alpha: 0, duration: 500, ease: 'Quad.in', onComplete: () => mud.setVisible(false) });
+    this.tweens.add({ targets: mud, x: 470, y: 590, displayWidth: 40, displayHeight: 40, alpha: 0, duration: 500, ease: 'Quad.in', onComplete: () => mud.setVisible(false) });
     this.setForgeHint('正在煎煮，稍候片刻……');
     this.stoveFx.setVisible(true).setAlpha(0);
     this.tweens.add({ targets: this.stoveFx, alpha: 1, duration: 400 });

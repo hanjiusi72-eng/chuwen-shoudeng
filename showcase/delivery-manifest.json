@@ -1,0 +1,77 @@
+{
+  "films": [
+    {
+      "n": "01",
+      "file": "01-pop-play.mp4",
+      "title": "撞色游艺",
+      "en": "POP / PLAY",
+      "dur": 36,
+      "color": "#ff75c7",
+      "desc": "高饱和撞色、角色贴纸与卡片快切。让采药、济世和守灯，成为一场有节奏的指尖冒险。",
+      "ref": "参考 1 · 撞色插画与快节奏浏览",
+      "preview": 0,
+      "size": 15.6
+    },
+    {
+      "n": "02",
+      "file": "02-soft-orbits.mp4",
+      "title": "光的圆舞",
+      "en": "SOFT / ORBITS",
+      "dur": 44,
+      "color": "#ccebdd",
+      "desc": "浅色渐变、圆形草木纹样与柔和流动。从一味药到一盏灯，让光在画面里慢慢展开。",
+      "ref": "参考 2 · 浅色渐变与圆形动效",
+      "preview": 2,
+      "size": 9.6
+    },
+    {
+      "n": "03",
+      "file": "03-lantern-story.mp4",
+      "title": "灯火长卷",
+      "en": "LIGHT / STORY",
+      "dur": 60,
+      "color": "#f1d7a3",
+      "desc": "以纸面漫画分镜串起医者、村庄和一夜灯火。实机交互与插画叙事，一同走向天明。",
+      "ref": "参考 3 · 漫画分镜与连续叙事",
+      "preview": 4,
+      "size": 16.6
+    }
+  ],
+  "files": [
+    {
+      "file": "01-pop-play.mp4",
+      "bytes": 16345465,
+      "sha256": "ad1e75b8f9273d2b9b150e62b531ee8611048560f5eaf87710e239aefbd258c3"
+    },
+    {
+      "file": "02-soft-orbits.mp4",
+      "bytes": 10095583,
+      "sha256": "57005c3309eb3c069594c8e5f1b77758343571f1a35dc3220ca40a92ce2672b0"
+    },
+    {
+      "file": "03-lantern-story.mp4",
+      "bytes": 17368285,
+      "sha256": "6751bcf931e3a3dc71bd0d7e74f0bf9f5c0a423ae1838a3f62eb2f5d7a1b6f26"
+    },
+    {
+      "file": "Mac使用说明.txt",
+      "bytes": 642,
+      "sha256": "7b6dfe6323598bac8242514af054ff3dd88ab98a230129677fdbc8c989f8bc41"
+    },
+    {
+      "file": "game-offline-mac.zip",
+      "bytes": 12952174,
+      "sha256": "f56c56fb32e5c496299dd803c51c2172c86d8af8465442704182f8bfc39e6c6b"
+    },
+    {
+      "file": "guangliang-complete.zip",
+      "bytes": 57450145,
+      "sha256": "6eb91af239ec17feab993aa4752b38c7453cf1a6f1fe22b0a0897ebebfefa044"
+    },
+    {
+      "file": "guangliang-offline.html",
+      "bytes": 18401305,
+      "sha256": "a94419eb6595b240be2ef76c6ba2f18c0a08a88a717eb57bc7f91eef06e8a1f6"
+    }
+  ]
+}
