@@ -89,8 +89,8 @@ class MedicineScene extends Phaser.Scene {
     this.mortarHi = this.add.graphics();
     this.fxStatus = T(this, 800, 424, '', 18, '#ffffff', { bold: true, stroke: '#b0487c', strokeThickness: 4 });
     T(this, 560, 716, '', 18, '#ffffff', { stroke: '#b0487c', strokeThickness: 4 }).setName('fxHint');
-    // 药泥
-    this.mud = this.add.image(800, 420, 'tool_mud').setDisplaySize(135, 90).setVisible(false).setAlpha(0).setDepth(50);
+    // 药泥（圆球）
+    this.mud = this.add.image(800, 420, 'tool_mud').setDisplaySize(190, 127).setVisible(false).setAlpha(0).setDepth(50);
     this.mud.setInteractive({ draggable: true, useHandCursor: true });
     Object.assign(this.mud, { kind: 'fxmud', home: { x: 800, y: 420 } });
     this.input.setDraggable(this.mud);
@@ -144,6 +144,7 @@ class MedicineScene extends Phaser.Scene {
     this.fxSelected = [];
     this.resetRack();
     this.fxPhase = 'select';
+    this.tweens.killTweensOf(this.mud);
     this.mud.setVisible(false).setAlpha(0);
     this.setForgeStatus('');
     this.renderCards(true);
@@ -155,6 +156,7 @@ class MedicineScene extends Phaser.Scene {
   bindForgeDrag() {
     Object.values(this.rack).forEach(c => this.input.setDraggable(c));
     this.input.on('dragstart', (p, o) => {
+      this.tweens.killTweensOf(o);
       if (o.kind === 'fxherb' && !o.used) {
         o.setDepth(1000);
         this.tweens.add({ targets: o, scale: 1.1, duration: 90 });
@@ -227,7 +229,9 @@ class MedicineScene extends Phaser.Scene {
       g.remove();
       this.fxPhase = 'mud';
       this.mud.setVisible(true).setPosition(800, 540).setAlpha(0);
-      this.tweens.add({ targets: this.mud, y: 420, alpha: 1, duration: 700, ease: 'Quad.out' });
+      this.tweens.add({ targets: this.mud, y: 420, alpha: 1, duration: 700, ease: 'Quad.out', onComplete: () => {
+        this.tweens.add({ targets: this.mud, y: 408, yoyo: true, repeat: -1, duration: 900, ease: 'Sine.inOut' });
+      } });
       this.setForgeHint('把药泥拖进左边的煎药罐');
       this.busy = false;
     });

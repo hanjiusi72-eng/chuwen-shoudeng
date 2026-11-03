@@ -1,10 +1,29 @@
 /* 交互 0：掷骰子采药棋盘（15 格蛇形山路；第 8 格遇虎、13 格遇龙、14 格出山） */
 const FORAGE_SX = W / 1440;                       // 参考稿 1440 宽 → 1334
-const FORAGE_DY = 20;                             // 整体下移，避开顶栏
+const FORAGE_DY = 0;                              // 参考稿即全屏棋盘，不再下移
 const cellPos = n => {                            // 参考稿坐标：x=254+col*232.5, y=[227,449,675]
   const row = Math.floor(n / 5), col = row === 1 ? 4 - n % 5 : n % 5;
   return { x: (254 + col * 232.5) * FORAGE_SX, y: ([227, 449, 675][row] - 60) * FORAGE_SX + FORAGE_DY };
 };
+/* 轻量状态胶囊：参考稿为满屏棋盘，不用整条顶栏，只留左上目标 + 右上计数 */
+function forageChip(scene) {
+  const g = scene.add.graphics().setDepth(900);
+  const label = T(scene, 30, 34, '', 20, '#fff8d0', { ox: 0, bold: true }).setDepth(901);
+  const step = T(scene, W - 26, 34, '', 18, '#fbf5a2', { ox: 1, bold: true, stroke: '#8a005e', strokeThickness: 4 }).setDepth(901);
+  const draw = () => {
+    g.clear();
+    const w = Math.min(W - 300, label.width + 36);
+    g.fillStyle(C.ink, 0.82); g.fillRoundedRect(14, 12, w, 44, 22);
+    g.lineStyle(3, C.magenta, 1); g.strokeRoundedRect(14, 12, w, 44, 22);
+    const sw = step.width + 30;
+    g.fillStyle(C.ink, 0.82); g.fillRoundedRect(W - sw - 14, 12, sw, 44, 22);
+    g.lineStyle(3, C.yellow, 1); g.strokeRoundedRect(W - sw - 14, 12, sw, 44, 22);
+  };
+  return {
+    setObjective(s) { label.setText(s); draw(); scene.tweens.add({ targets: label, alpha: { from: 0.25, to: 1 }, duration: 300 }); },
+    setStep(s) { step.setText(s); draw(); }
+  };
+}
 class ForageScene extends Phaser.Scene {
   constructor() { super('Forage'); }
   create() {
@@ -52,14 +71,14 @@ class ForageScene extends Phaser.Scene {
 
     // 骰子
     this.diceVal = 5;
-    this.dice = this.add.image(1252, 650, 'vdice5').setDisplaySize(118, 118).setDepth(60).setInteractive({ useHandCursor: true });
+    this.dice = this.add.image(1214, 646, 'vdice5').setDisplaySize(118, 118).setDepth(60).setInteractive({ useHandCursor: true });
     this.diceS = this.dice.scale;
     this.dice.on('pointerup', () => this.roll());
     this.tweens.add({ targets: this.dice, angle: { from: -4, to: 4 }, yoyo: true, repeat: -1, duration: 900, ease: 'Sine.inOut' });
-    this.diceHint = T(this, 1252, 724, '点骰子出发', 16, '#fff8d0', { bold: true, stroke: '#8a005e', strokeThickness: 4 });
+    this.diceHint = T(this, 1214, 720, '点骰子出发', 16, '#fff8d0', { bold: true, stroke: '#8a005e', strokeThickness: 4 });
     T(this, 84, 722, '路过草丛顺手采 · 停下才算进站', 16, '#fff8d0', { sans: true, stroke: '#8a005e', strokeThickness: 4, ox: 0 });
 
-    this.hud = hud(this, '第一幕 · 入山采药', '掷骰子前进，采齐山里的药草');
+    this.hud = forageChip(this);
     muteButton(this);
     this.refresh();
     this.walking = false;

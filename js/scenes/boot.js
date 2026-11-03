@@ -1,5 +1,5 @@
 /* 素材版本号：替换素材后改这里，避免浏览器读到旧缓存 */
-const ASSET_VERSION = 4;
+const ASSET_VERSION = 5;
 /* 载入素材 + 生成程序化贴图 */
 class BootScene extends Phaser.Scene {
   constructor() { super('Boot'); }
@@ -8,7 +8,7 @@ class BootScene extends Phaser.Scene {
     const t = T(this, W / 2, H / 2 - 40, '龙虎灯 · 载入中', 28, '#fbf5a2');
     this.load.on('progress', p => { g.clear(); g.fillStyle(C.ink, 1); g.fillRoundedRect(W / 2 - 200, H / 2, 400, 18, 9); g.fillStyle(C.magenta, 1); g.fillRoundedRect(W / 2 - 200, H / 2, 400 * p, 18, 9); });
     const A = 'assets/', V = '?v=' + ASSET_VERSION, V2 = 'assets/v2/';
-    ['bg_pharmacy', 'bg_pattern', 'bg_village', 'bg_village_dim', 'bg_village_night', 'bg_board'].forEach(k => this.load.image(k, A + k + '.jpg' + V));
+    ['bg_pharmacy', 'bg_shrine', 'bg_pattern', 'bg_village', 'bg_village_dim', 'bg_village_night', 'bg_board'].forEach(k => this.load.image(k, A + k + '.jpg' + V));
     ['char_dragon', 'char_elder', 'char_tiger', 'char_baosheng', 'head_dragon', 'head_elder', 'head_tiger', 'head_baosheng',
       'book_slips', 'scrolls', 'fan', 'stove', 'mortar', 'pattern_dragon', 'pattern_tiger', 'card_dragon', 'card_tiger',
       'ghost', 'wenshen', 'fig_dragon', 'fig_tiger', 'fig_carp']
