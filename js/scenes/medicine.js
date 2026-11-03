@@ -7,15 +7,16 @@ class MedicineScene extends Phaser.Scene {
     fadeIn(this, ['ptHi', 'ptZone', 'pt', 'hiTween', 'flipping', 'gourd', 'gourdHint', 'eyes', 'eyesDone', 'redMark', 'dropper', 'closedBook', 'focusTask', 'taskCards', 'book', 'pageC']);
     this.add.image(W / 2, H / 2, 'bg_pharmacy').setDisplaySize(W, H);
     const titles = {
-      tiger: ['交互 1A · 治虎', '查阅药书，为老虎配制治喉的药'],
-      dragon: ['交互 1B · 医龙', '查阅药书，为青龙配制明目的药'],
-      effects: ['交互 2B · 功效制药', '按龙虎的功效提示，备齐三种药（顺序不限）']
+      tiger: ['药房来客 · 白额虎', '翻开药书，为远道的来客煎一炉暖'],
+      dragon: ['药房来客 · 青龙', '替青龙找回眼前的山色与人间'],
+      effects: ['一炉药香', '把药书上的心意，煎成邻里手中的温热']
     };
     this.hud = hud(this, ...titles[this.mode]);
     this.pot = []; this.busy = false; this.phase = 'brew';
     this.streakKey = this.mode;
     G.errorStreak[this.streakKey] = G.errorStreak[this.streakKey] || 0;
 
+    if (this.mode === 'effects') { G.bookOpened = true; if (G.bookPageIndex < 2) G.bookPageIndex = 2; }
     this.buildBackpack();
     this.buildPot();
     this.buildBook();
@@ -25,15 +26,15 @@ class MedicineScene extends Phaser.Scene {
     this.updateStep();
 
     const intro = {
-      tiger: [{ who: 'tiger', text: '嗷……喉咙里卡着东西，咽也咽不下去……' },
-              { who: 'wu', text: '药书里有治“喉中鲠物”的方子。先打开药书，再把方中的草药一味味拖进药罐。' }],
-      dragon: [{ who: 'dragon', text: '我眼前一片模糊，连师父的脸都看不清了……' },
-               { who: 'wu', text: '翻翻药书，找到明目的方子。这回的配方和治虎的不一样。' }],
-      effects: [{ who: 'tiger', text: '村里的病人，有的发热、有的咳嗽、有的呕吐腹胀。' },
-                { who: 'dragon', text: '三种药都要备好，先做哪一种都行。药材是从药草摊买来的，配错了也不会少。' }]
+      tiger: [{ who: 'tiger', text: '本想替山下的孩子摘些野果，谁知喉咙卡住了。连句招呼都说不利索，真叫人着急。' },
+              { who: 'wu', text: '先坐坐，别怕。徒儿，翻开药书找“舒喉化骨汤”，再把三味药材一一放进罐里。' }],
+      dragon: [{ who: 'dragon', text: '从前我能看清山顶的一片叶子，如今连眼前的灯都模糊了。还能看见它亮起来吗？' },
+               { who: 'wu', text: '会的，我们慢慢来。翻到“菊花明目饮”，把药配好，我陪你等光回来。' }],
+      effects: [{ who: 'tiger', text: '刚才路过巷口，陈伯还惦记着给大家修灯架。咱们把药煎好，趁热送过去。' },
+                { who: 'dragon', text: '银翘散、麦门冬汤、藿香正气散，药书里都记着。先煎哪一炉都好，我来替你看着火。' }]
     }[this.mode];
     this.time.delayedCall(450, () => dialog(this, intro, () => {
-      if (!G.bookOpened) this.hud.setObjective('第一步：点击打开药书');
+      if (!G.bookOpened) this.hud.setObjective('先翻开药书，把这一炉暖备起来');
     }));
   }
 
@@ -48,9 +49,10 @@ class MedicineScene extends Phaser.Scene {
     HERBS.forEach((h, i) => {
       const x = 1030 + (i % 3) * 114, y = 196 + Math.floor(i / 3) * 134;
       const c = this.add.container(x, y);
-      const im = this.add.image(0, 0, 'herb_' + h.id).setDisplaySize(98, 98);
+      const rim = this.add.graphics(); rim.fillStyle(C.cream); rim.fillCircle(0, 0, 45); rim.lineStyle(4,C.magenta); rim.strokeCircle(0,0,45);
+      const im = this.add.image(0, 0, 'plant_' + h.id); im.setScale(72 / Math.max(im.width,im.height));
       const nm = T(this, 0, 60, h.name, 19, '#fff8d0', { bold: true });
-      c.add([im, nm]); c.setSize(104, 128);
+      c.add([rim, im, nm]); c.setSize(104, 128);
       c.setInteractive({ draggable: true, useHandCursor: true });
       Object.assign(c, { kind: 'herb', herb: h.id, home: { x, y }, im, nm });
       this.cards[h.id] = c;
@@ -125,7 +127,7 @@ class MedicineScene extends Phaser.Scene {
   openBook(instant) {
     const { bookX: x, bookY: y, bookW: w, bookH: h } = this;
     const s = w / 1000;
-    this.book = this.add.nineslice(x, y, 'book_slips', null, 1000, h / s, 8, 8, 80, 80).setScale(s);
+    this.book = this.add.image(x, y, 'book_slips').setDisplaySize(w, h); // Canvas 与 WebGL 都显示完整竹简，不依赖 NineSlice 渲染支持。
     this.pageC = this.add.container(x, y);
     // 翻页热区
     const mk = (dx, dir) => {
@@ -210,7 +212,7 @@ class MedicineScene extends Phaser.Scene {
     this.pt.setScale(200 / this.pt.height).setDepth(20);
     this.ptZone = new Phaser.Geom.Rectangle(370, 84, 300, 206);
     T(this, 790, 108, isT ? '白额虎' : '青龙', 24, '#9a0078', { bold: true });
-    T(this, 790, 140, isT ? '症状：喉中鲠物，吞咽作痛' : '症状：双目昏花，红肿畏光', 17, '#2a1030', { sans: true });
+    T(this,790,151,isT ? '别着急，先坐坐。' : '慢慢来，光会回来的。',18,'#2a1030',{sans:true});
     this.ptStep = T(this, 790, 222, '', 18, '#004dfc', { bold: true, wrap: 250, align: 'center' });
     if (isT) {
       this.redMark = this.add.circle(this.pt.x, 232, 15, C.red, 0.0).setStrokeStyle(4, C.red).setDepth(21);
@@ -228,46 +230,31 @@ class MedicineScene extends Phaser.Scene {
 
   /* ---------------- 功效任务（交互 2B） ---------------- */
   buildTasks() {
-    this.taskCards = {};
-    EFFECT_TASKS.forEach((tk, i) => {
-      const x = 455 + i * 190, y = 140;
-      const c = this.add.container(x, y);
-      const g = this.add.graphics();
-      const head = this.add.image(-64, -26, WHO[tk.who].head); head.setScale(40 / head.height);
-      const t1 = T(this, 18, -26, tk.short, 20, '#9a0078', { bold: true });
-      const t2 = T(this, 0, 14, tk.hint.replace(/。$/, ''), 14, '#2a1030', { sans: true, wrap: 164, align: 'center' });
-      const st = T(this, 0, 52, '未完成', 14, '#6a6a7a', { sans: true });
-      c.add([g, head, t1, t2, st]);
-      c.setSize(176, 128); c.setInteractive({ useHandCursor: true });
-      Object.assign(c, { g, st, tk, done: G.effectsDone.has(tk.id) });
-      c.on('pointerup', () => { this.focusTask = tk.id; this.drawTasks(); SFX.click();
-        toast(this, (tk.who === 'tiger' ? '白额虎：' : '青龙：') + '“' + tk.hint + '”', { y: 330, ms: 2200 }); });
-      this.taskCards[tk.id] = c;
+    // 以药书、药炉与草药为中心，不再显示人物症状卡。
+    T(this,645,112,'把暖意，送到每一家',30,'#9a0078',{bold:true});
+    T(this,645,158,'点药名翻查药书，我陪你看火。',18,'#2a1030');
+    const g=this.add.graphics();
+    g.lineStyle(3,C.cream);g.lineBetween(400,274,904,274);
+    this.shelfLabels = {};
+    EFFECT_TASKS.forEach((task,i)=>{
+      const x=470+i*175;
+      this.shelfLabels[task.id]=T(this,x,205,RECIPE[task.id].name,18,'#6a0050',{bold:true}).setInteractive({useHandCursor:true});
+      this.shelfLabels[task.id].on('pointerup',()=>{if(this.busy||this.dlgOpen())return;G.bookPageIndex=RECIPES.findIndex(r=>r.id===task.id);this.renderPage();SFX.page();});
     });
-    // 成药展示架
-    const g = this.add.graphics();
-    g.fillStyle(0x7a3a10, 1); g.fillRoundedRect(380, 268, 530, 12, 6);
-    g.fillStyle(0xb06a2a, 1); g.fillRect(400, 280, 10, 22); g.fillRect(880, 280, 10, 22);
-    T(this, 388, 246, '成药架', 15, '#7a3a10', { bold: true, ox: 0 });
-    this.shelf = [];
     this.drawTasks();
-    [...G.effectsDone].forEach(id => this.addToShelf(id, true));
+    [...G.effectsDone].forEach(id=>this.addToShelf(id,true));
   }
   drawTasks() {
-    Object.values(this.taskCards).forEach(c => {
-      const done = G.effectsDone.has(c.tk.id), foc = this.focusTask === c.tk.id;
-      c.g.clear();
-      c.g.fillStyle(done ? 0xd8f5e0 : C.cream, 1); c.g.fillRoundedRect(-88, -64, 176, 128, 14);
-      c.g.lineStyle(foc ? 6 : 3, done ? C.green : (foc ? C.blue : C.magenta), 1); c.g.strokeRoundedRect(-88, -64, 176, 128, 14);
-      c.st.setText(done ? '✔ 已备好 · ' + RECIPE[c.tk.id].name : (foc ? '◎ 正在关注' : '○ 未完成'));
-      c.st.setColor(done ? '#118a5a' : (foc ? '#004dfc' : '#6a6a7a'));
+    Object.entries(this.shelfLabels).forEach(([id,label])=>{
+      label.setText((G.effectsDone.has(id)?'✓ ':'')+RECIPE[id].name);
+      label.setColor(G.effectsDone.has(id)?'#07543f':'#6a0050');
     });
   }
   addToShelf(id, instant) {
     const i = EFFECT_TASKS.findIndex(t => t.id === id);
     const x = 470 + i * 175, y = 244;
     const gd = this.add.image(instant ? x : 645, instant ? y : 470, 'gourd').setScale(0.48).setTint(RECIPE[id].color);
-    const lb = T(this, x, y + 50, RECIPE[id].name, 14, '#2a1030', { bold: true }).setAlpha(instant ? 1 : 0);
+    const lb = T(this, x, y + 40, '这炉暖，已备好', 13, '#07543f', { bold: true }).setAlpha(instant ? 1 : 0);
     if (!instant) this.tweens.add({ targets: gd, x, y, duration: 700, ease: 'Quad.inOut', onComplete: () => { lb.setAlpha(1); sparkle(this, x, y, C.green, 10); } });
   }
 
@@ -328,7 +315,7 @@ class MedicineScene extends Phaser.Scene {
       const r = RECIPES.find(r => r.id[0] === 'E' && this.sameSet(pot, r.herbs));
       if (r && G.effectsDone.has(r.id)) return this.fail(`${r.name}已经备好了，这种药不用再做`, false);
       if (r) return this.success(r);
-      return this.fail('这份配方与待制药物不符，再看看药书');
+      return this.fail('这一炉还差些火候，我们再对照药书看看。');
     }
     const target = this.mode === 'tiger' ? RECIPE.R1 : RECIPE.R2;
     if (this.sameSet(pot, target.herbs)) return this.success(target);
@@ -341,7 +328,7 @@ class MedicineScene extends Phaser.Scene {
     this.tweens.add({ targets: this.stove, x: { from: 637, to: 653 }, yoyo: true, repeat: 4, duration: 50, onComplete: () => { this.stove.x = 645; } });
     this.liquid.setFillStyle(0x6a6a6a, 0.6);
     toast(this, msg, { y: 300 });
-    this.setStatus('本锅已清空，所有药材重新亮起');
+    this.setStatus('没关系，炉火还暖着。再试一次。');
     if (count) G.errorStreak[this.streakKey]++;
     if (G.errorStreak[this.streakKey] >= 2) {
       const hint = { tiger: '提示：药书里写着“喉中鲠物”的那一页，就是治虎的药方。',
@@ -372,7 +359,7 @@ class MedicineScene extends Phaser.Scene {
         this.busy = false; this.updateStep();
         if (G.effectsDone.size === EFFECT_TASKS.length) {
           this.busy = true;
-          this.time.delayedCall(1400, () => dialog(this, [{ who: 'tiger', text: '三种药都备好了！村里病得最重的是木匠，我们快去！' }], () => goTo(this, 'Story', { id: 'B' })));
+          this.time.delayedCall(1400, () => dialog(this, [{ who: 'tiger', text: '三炉药都好了。陈伯的家就在巷子尽头，走，别让药凉了。' }], () => goTo(this, 'Story', { id: 'B' })));
         }
         return;
       }
@@ -432,8 +419,8 @@ class MedicineScene extends Phaser.Scene {
     sparkle(this, this.pt.x, 232, C.yellow, 20);
     G.healedTiger = true; this.phase = 'done'; this.updateStep();
     this.time.delayedCall(900, () => dialog(this, [
-      { who: 'tiger', text: '呼——舒服多了！原来是这支发簪卡住了喉咙。多谢小学徒！' },
-      { who: 'wu', text: '做得好。青龙还等着呢，接着为它医眼吧。' }
+      { who: 'tiger', text: '呼——总算能大声说话了！这声谢谢送给你，回头我给你带山里的甜果子。' },
+      { who: 'wu', text: '手稳，心也细。青龙还等着呢，咱们接着陪陪它。' }
     ], () => goTo(this, 'Medicine', { mode: 'dragon' })));
   }
   showDropper() {
@@ -464,11 +451,11 @@ class MedicineScene extends Phaser.Scene {
         this.tweens.add({ targets: this.dropper, alpha: 0, duration: 300 });
         this.tweens.add({ targets: this.pt, scale: 200 / this.pt.height, x: 505, y: 188, duration: 600, delay: 500, ease: 'Cubic.inOut' });
         this.time.delayedCall(700, () => dialog(this, [
-          { who: 'dragon', text: '我看见了！天是蓝的，师父的胡子是黑的。多谢你！' },
-          { who: 'tiger', text: '我们龙虎欠你一份情。跟我们来，山下有件要紧事……' }
+          { who: 'dragon', text: '看见了！窗外那片青山，还有你们的笑脸……原来看得见彼此，是这样好的事。' },
+          { who: 'tiger', text: '你帮了我们，这份情咱们记着。山下还有人盼着药香，愿不愿随我们走一趟？' }
         ], () => {
           this.updateStep();
-          button(this, 645, 560, '进入剧情 ▸', () => goTo(this, 'Story', { id: 'A' }), { w: 220, h: 60, size: 24 }).setDepth(1100);
+          button(this, 645, 560, '一起去村里 ▸', () => goTo(this, 'Story', { id: 'A' }), { w: 220, h: 60, size: 24 }).setDepth(1100);
         }));
       }
     });
@@ -477,12 +464,12 @@ class MedicineScene extends Phaser.Scene {
   /* ---------------- 目标与步骤 ---------------- */
   updateStep() {
     const H_ = this.hud;
-    if (!G.bookOpened) { H_.setObjective('第一步：点击打开药书'); H_.setStep('药书合上时无法查方'); this.setStatus('先打开药书'); return; }
+    if (!G.bookOpened) { H_.setObjective('先翻开药书，把这一炉暖备起来'); H_.setStep('药书合上时无法查方'); this.setStatus('先打开药书'); return; }
     if (this.mode === 'effects') {
       const left = EFFECT_TASKS.filter(t => !G.effectsDone.has(t.id)).length;
-      H_.setObjective(left ? '翻书比对功效，拖药入罐，配齐 4 味自动成药' : '三种药都备好了');
+      H_.setObjective(left ? '照着药书配齐四味，慢慢煎一炉给乡亲' : '三种药都备好了');
       H_.setStep(`已完成 ${EFFECT_TASKS.length - left} / ${EFFECT_TASKS.length}`);
-      if (!this.busy && !this.pot.length) this.setStatus('配满四味药材后自动判定');
+      if (!this.busy && !this.pot.length) this.setStatus('四味入罐，一炉心意慢慢暖。');
       return;
     }
     const steps = {

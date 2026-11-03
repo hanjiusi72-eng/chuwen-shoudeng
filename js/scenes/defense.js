@@ -12,7 +12,7 @@ class DefenseScene extends Phaser.Scene {
   create() {
     fadeIn(this, ['ov', 'tut', 'markTw', 'rainDrag', 'drum', 'fog']);
     this.add.image(W / 2, H / 2, 'bg_village_night').setDisplaySize(W, H);
-    this.hud = hud(this, '交互 3 · 守灯', '守到天明：保护全村户灯');
+    this.hud = hud(this, '长夜 · 灯火相守', '守到天明：保护全村户灯');
     this.dawnG = this.add.graphics().setDepth(901);
     this.fx = this.add.container(0, 0).setDepth(300);
     this.buildLamps();

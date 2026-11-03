@@ -53,8 +53,8 @@ const NIGHT = {
 
 /* 幕间界面（按设计稿：序幕底纹 + 带网点分身的人物 + 竖排诗句 + 「第X幕」） */
 const ACTS = {
-  1: { title: '第一幕', sub: '醫龍治虎', fig: 'fig_tiger', poem: ['懸壺白礁濟蒼生，', '一爐藥火照龍虎。'], next: ['Medicine', { mode: 'tiger' }] },
-  2: { title: '第二幕', sub: '入村製藥', fig: 'fig_carp', poem: ['市聲裡尋藥與竹，', '一盞素燈照萬家。'], next: ['Market'] },
-  3: { title: '第三幕', sub: '守燈驅瘟', fig: 'wenshen', poem: ['瘟神夜至風吹燈，', '鼓響龍吟守天明。'], next: ['Defense'] },
-  4: { title: '第四幕', sub: '畫燈題字', fig: 'fig_dragon', poem: ['筆底龍虎生紋彩，', '燈前吉語寄平安。'], next: ['Decorate'] }
+  1: { title: '第一幕', sub: '山间寻香 · 医龙治虎', fig: 'fig_tiger', poem: ['山路上拾起一味药，', '为远道的来客留一炉暖。'], next: ['Gather'] },
+  2: { title: '第二幕', sub: '烟火相逢', fig: 'fig_carp', poem: ['市声里有寻常烟火，', '一盏灯，是邻里递来的牵挂。'], next: ['Market'] },
+  3: { title: '第三幕', sub: '长夜相守', fig: 'wenshen', poem: ['风起时，把灯护在手心，', '你不是一个人在等天明。'], next: ['Defense'] },
+  4: { title: '第四幕', sub: '落笔祈愿', fig: 'fig_dragon', poem: ['把愿望写在灯上，', '把今夜的光，留给来年。'], next: ['Decorate'] }
 };

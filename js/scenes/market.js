@@ -4,7 +4,7 @@ class MarketScene extends Phaser.Scene {
   create() {
     fadeIn(this, ['goTween', 'bub']);
     this.busy = false;
-    this.hud = hud(this, '交互 2A · 市集', '根据龙虎的提示，找到所需的摊位（顺序不限）');
+    this.hud = hud(this, '村口 · 烟火相逢', '循着人声逛逛，为乡亲捎回药草和灯材');
     this.drawBackdrop();
     this.buildHints();
     this.stalls = {};
@@ -13,8 +13,8 @@ class MarketScene extends Phaser.Scene {
     muteButton(this);
     this.refresh();
     this.time.delayedCall(400, () => dialog(this, [
-      { who: 'dragon', text: '这里就是村口市集。上面是我们俩的采购提示，全都可以随时看。' },
-      { who: 'tiger', text: '直接点你觉得对的摊子，选对了摊主会把东西交给你。先找哪家都行！' }
+      { who: 'dragon', text: '包子铺又冒热气了。咱们在这里添些草药，再给陈伯挑些扎灯的材料。' },
+      { who: 'tiger', text: '竹篾、棉纸、灯油灯芯，别落下。点点摊位，慢慢挑，我陪你逛！' }
     ]));
   }
   drawBackdrop() {

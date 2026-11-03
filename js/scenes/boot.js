@@ -1,11 +1,11 @@
 /* 素材版本号：替换素材后改这里，避免浏览器读到旧缓存 */
-const ASSET_VERSION = 3;
+const ASSET_VERSION = 4;
 /* 载入素材 + 生成程序化贴图 */
 class BootScene extends Phaser.Scene {
   constructor() { super('Boot'); }
   preload() {
     const g = this.add.graphics();
-    const t = T(this, W / 2, H / 2 - 40, '龙虎灯 · 载入中', 28, '#fbf5a2');
+    const t = T(this, W / 2, H / 2 - 40, '长明 · 灯火将起', 28, '#fbf5a2');
     this.load.on('progress', p => { g.clear(); g.fillStyle(C.ink, 1); g.fillRoundedRect(W / 2 - 200, H / 2, 400, 18, 9); g.fillStyle(C.magenta, 1); g.fillRoundedRect(W / 2 - 200, H / 2, 400 * p, 18, 9); });
     const A = 'assets/', V = '?v=' + ASSET_VERSION;
     ['bg_pharmacy', 'bg_pattern', 'bg_village', 'bg_village_dim', 'bg_village_night', 'bg_board'].forEach(k => this.load.image(k, A + k + '.jpg' + V));

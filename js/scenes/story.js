@@ -16,32 +16,32 @@ function bobbing(scene, obj, amp = 8, dur = 1600) { scene.tweens.add({ targets: 
 
 const STORIES = {
   prologue: {
-    title: '序章 · 药房来客',
+    title: '序章 · 药香里的相逢',
     shots: [
       { bg: 'bg_pattern', build(s) { actor(s, 'char_baosheng', W / 2, H + 10, 640, 'up'); },
-        lines: [{ who: 'narr', text: '闽南白礁，相传有位医者吴夲，悬壶济世、救人无数，后人尊他为“保生大帝”。' },
-                { who: 'wu', text: '徒儿，今日药房来了两位特别的病人。' }] },
+        lines: [{ who: 'narr', text: '白礁的清晨，总有一缕药香先醒来。医者吴夲守着这间小药房，谁敲门，他都应一声“来了”。后来，人们唤他保生大帝。' },
+                { who: 'wu', text: '徒儿，把炉火拨暖些。今早的两位来客，走了好远的路。' }] },
       { bg: 'bg_pharmacy', build(s) {
           s.add.rectangle(W / 2, H / 2, W, H, 0x2a1030, 0.35);
           const t = actor(s, 'char_tiger', W - 300, H + 40, 640, 'right'); const d = actor(s, 'char_dragon', 280, H + 40, 640, 'left');
           s.time.delayedCall(1000, () => { bobbing(s, t, 6); bobbing(s, d, 6, 1900); });
         },
-        lines: [{ who: 'narr', text: '一只白额虎伏在门前，喉中鲠着异物，吞咽作痛；一条青龙双目昏花，连路都看不清。' },
-                { who: 'wu', text: '你随我学医多日，药书就在案上。先替老虎配一剂药——记住，看清药方再动手。' },
-                { who: 'me', text: '是，师父！' }] }
+        lines: [{ who: 'narr', text: '门外的白额虎不敢作声，青龙扶着门框，眯眼寻找光亮。平日威风的他们，此刻也只是盼着有人帮一把的来客。' },
+                { who: 'wu', text: '别急，先随我上山采药。药书里的每一味草木，到了手心，才有了温度。' },
+                { who: 'me', text: '我去背药篓。两位别怕，我们很快就回来。' }] }
     ],
     next: ['Act', { act: 1 }]
   },
   A: {
-    title: '剧情 A · 龙虎入村',
+    title: '山下 · 有人在等我们',
     shots: [
       { bg: 'bg_village', build(s) {
           s.add.rectangle(W / 2, H / 2, W, H, 0xffffff, 0.18);
           actor(s, 'char_dragon', 300, H + 40, 600, 'left'); actor(s, 'char_tiger', W - 320, H + 40, 600, 'right');
         },
-        lines: [{ who: 'tiger', text: '多亏了你，小学徒，我喉咙里的骨簪总算取出来了！' },
-                { who: 'dragon', text: '我也重新看清了路。可山下的村子闹起了瘟疫，家家门户紧闭……' },
-                { who: 'tiger', text: '瘟神带着疫鬼在村里作乱，染病的人越来越多。我们带你进村！' }] },
+        lines: [{ who: 'tiger', text: '终于能好好说声谢谢了！等你好久，这句谢可把我憋坏了。' },
+                { who: 'dragon', text: '我又看得见山下的路了。只是从前那条热闹的巷子，如今连炊烟都稀了。' },
+                { who: 'tiger', text: '那里有人等着汤药，也等着一声问候。走吧，这回换我们陪你。' }] },
       { bg: 'bg_pattern', build(s) {
           s.add.rectangle(W / 2, H / 2, W, H, 0x14164a, 0.55);
           panel(s, 90, 90, 500, 400, { fill: C.cream, stroke: C.magenta, lw: 5 });
@@ -57,8 +57,8 @@ const STORIES = {
             s.tweens.add({ targets: [im, t], alpha: 1, duration: 500, delay: 400 + i * 250 });
           });
         },
-        lines: [{ who: 'dragon', text: '治瘟要先有药。这本药书你收好，药方都在里面。' },
-                { who: 'tiger', text: '草药、竹篾、棉纸、灯油，村口市集都买得到，我们一路给你提示。' }] },
+        lines: [{ who: 'dragon', text: '这本药书贴身收好。到了村里，咱们一户一户去问，一炉一炉地煎。' },
+                { who: 'tiger', text: '顺路去市集添些草药，再捎上竹篾、棉纸和灯油。别让乡亲们在黑里等。' }] },
       { bg: 'bg_pattern', build(s) {
           const glow = s.add.image(W / 2, 330, 'glow').setScale(2.2).setTint(0xfff3b0).setAlpha(0);
           const l = s.add.image(W / 2, 330, 'lantern_white').setScale(1.6).setAlpha(0);
@@ -70,40 +70,37 @@ const STORIES = {
           s.time.delayedCall(1500, () => { SFX.drum(); s.tweens.add({ targets: glow, scale: 3.2, duration: 500, yoyo: true }); });
           actor(s, 'head_dragon', 170, H - 170, 260, 'left'); actor(s, 'head_tiger', W - 190, H - 170, 260, 'right');
         },
-        lines: [{ who: 'dragon', text: '再送你一盏素灯。灯面还空着，等瘟疫退了再好好装点它。' },
-                { who: 'tiger', text: '记住：灯光和锣鼓声，能把来捣乱的瘟神疫鬼吓退！' }] }
+        lines: [{ who: 'dragon', text: '这盏素灯，你先提着。夜路不好走，有一点亮，心就不慌。' },
+                { who: 'tiger', text: '传说灯火和鼓声能赶走疫鬼。真起了风，我们就一起护着它，谁也不落下。' }] }
     ],
     next: ['Act', { act: 2 }]
   },
   B: {
-    title: '剧情 B · 救治木匠',
+    title: '陈伯家 · 把暖意送到门前',
     apply() { G.carpenterRescued = true; G.craftUnlocked = true; },
     shots: [
       { bg: 'bg_village', build(s) {
           s.add.rectangle(W / 2, H / 2, W, H, 0xffffff, 0.18);
-          const cp = s.add.image(W / 2 + 60, 560, 'char_elder').setScale(0.42).setAngle(-80).setTint(0xb0a8c0);
-          actor(s, 'char_dragon', 210, H + 40, 560, 'left'); actor(s, 'char_tiger', W - 200, H + 40, 560, 'right');
-          const gd = s.add.image(W - 330, 330, 'gourd').setScale(1.2).setAlpha(0);
-          s.tweens.add({ targets: gd, alpha: 1, duration: 300, delay: 1600 });
-          s.tweens.add({ targets: gd, x: W / 2, y: 460, duration: 900, delay: 2000, ease: 'Quad.inOut', onComplete: () => {
-            gd.destroy(); sparkle(s, W / 2, 470, C.yellow, 20); SFX.ok();
-            s.tweens.add({ targets: cp, angle: 0, x: W / 2, y: 470, duration: 900, ease: 'Back.out' }); cp.clearTint();
-          } });
+          // 陈伯从出场到离场始终直立；本镜头不再出现龙虎、病症或倒地动画。
+          const cp = actor(s, 'char_elder', W / 2, 568, 465, 'fade');
+          cp.setName('standing-carpenter');
+          const glow = s.add.image(W / 2, 570, 'glow').setTint(0xffd070).setScale(1.4).setAlpha(0.35).setDepth(-1);
+          s.tweens.add({ targets: glow, alpha: 0.55, yoyo: true, repeat: -1, duration: 1600 });
         },
-        lines: [{ who: 'narr', text: '药材备齐。龙虎与村民把对症的药送到病得最重的木匠家中。' },
-                { who: 'carp', text: '咳……我这是好了？多谢小友，多谢龙虎二位！' }] },
+        lines: [{ who: 'narr', text: '陈伯的门虚掩着，没做完的灯架搁在窗边。你把温热的药送进屋，他站在门前，连声招呼你歇歇脚。' },
+                { who: 'carp', text: '这一趟山路，辛苦你了。喝过药，身子舒坦多了。来，进屋坐，别总在风里站着。' }] },
       { bg: 'bg_pattern', build(s) {
           actor(s, 'char_elder', 360, H + 40, 640, 'left');
           const glow = s.add.image(W - 380, 320, 'glow').setScale(2).setTint(0xfff3b0); s.add.image(W - 380, 320, 'lantern_white').setScale(1.5);
           s.tweens.add({ targets: glow, alpha: 0.5, yoyo: true, repeat: -1, duration: 900 });
         },
-        lines: [{ who: 'carp', text: '这盏素灯真好看。可一盏不够——我们照着它，让家家都有一盏！' },
-                { who: 'carp', text: '走，到我家去，我教你和乡亲们扎灯。' }] }
+        lines: [{ who: 'carp', text: '我做了一辈子木活，最爱看灯亮起来的那一下。你送我一炉暖，我也教你扎一盏灯。' },
+                { who: 'carp', text: '灯架就在桌上。咱们慢慢来，把这份暖，送到每一家门前。' }] }
     ],
     next: ['Craft']
   },
   C: {
-    title: '剧情 C · 全村点灯',
+    title: '入夜 · 一家一盏灯',
     apply() { G.lampCrafted = true; },
     shots: [
       { bg: 'bg_pattern', build(s) {
@@ -115,7 +112,7 @@ const STORIES = {
           }
           s.tweens.add({ targets: main, angle: { from: -3, to: 3 }, yoyo: true, repeat: -1, duration: 1200 });
         },
-        lines: [{ who: 'narr', text: '你的样灯摆上桌，村民们照着样子，一盏接一盏地扎起素灯。' }] },
+        lines: [{ who: 'narr', text: '陈伯的桌边渐渐坐满了人。有人递竹篾，有人抹浆糊，连平日怕生的孩子，也捧着棉纸来搭把手。' }] },
       { bg: 'bg_village', build(s) {
           VILLAGE_LAMPS.forEach((p, i) => {
             const gl = s.add.image(p.x, p.y, 'glow').setTint(0xffd040).setScale(0).setAlpha(0.7);
@@ -127,7 +124,7 @@ const STORIES = {
             } });
           });
         },
-        lines: [{ who: 'narr', text: '药送到各家各户，乡亲们服下汤药；门前的素灯依次亮起。' }] },
+        lines: [{ who: 'narr', text: '药送进屋，灯挂上檐。巷口又响起了招呼声：“你家灯亮了？亮了，快进来喝口热的。”' }] },
       { bg: 'bg_village', build(s) {
           const night = s.add.image(W / 2, H / 2, 'bg_village_night').setDisplaySize(W, H).setAlpha(0);
           s.tweens.add({ targets: night, alpha: 1, duration: 1500 });
@@ -137,13 +134,13 @@ const STORIES = {
           s.tweens.add({ targets: god, angle: { from: -1.5, to: 1.5 }, yoyo: true, repeat: -1, duration: 1300, delay: 2200 });
           for (let i = 0; i < 6; i++) { const gh = s.add.image(-60, 200 + i * 70, 'ghost').setScale(0.32); s.tweens.add({ targets: gh, x: W + 80, duration: 5000, delay: 1200 + i * 500 }); }
         },
-        lines: [{ who: 'narr', text: '入夜，瘟神率疫鬼来袭，阴风吹得灯火摇晃……' },
-                { who: 'tiger', text: '守住这些灯！灯不灭，瘟就进不了门。我们一起守到天明！' }] }
+        lines: [{ who: 'narr', text: '夜深了，风从山口压下来。传说中的疫鬼藏进雾里，一盏灯晃了晃，隔壁的门却立刻开了。' },
+                { who: 'tiger', text: '我在这儿！你护灯，青龙拨开雾，我来敲鼓。只要还有一盏亮着，咱们就找得到彼此。' }] }
     ],
     next: ['Act', { act: 3 }]
   },
   D: {
-    title: '剧情 D · 天明',
+    title: '天明 · 人间又逢春',
     shots: [
       { bg: 'bg_village', build(s) {
           const night = s.add.image(W / 2, H / 2, 'bg_village_night').setDisplaySize(W, H);
@@ -153,13 +150,13 @@ const STORIES = {
           s.tweens.add({ targets: god, y: -40, alpha: 0, duration: 2200, delay: 400, ease: 'Cubic.in' });
           for (let i = 0; i < 5; i++) { const gh = s.add.image(400 + i * 120, 300 + (i % 2) * 80, 'ghost').setScale(0.38); s.tweens.add({ targets: gh, y: -120, alpha: 0, duration: 1600, delay: 300 + i * 150, ease: 'Cubic.in' }); }
         },
-        lines: [{ who: 'narr', text: '鸡鸣破晓，疫鬼四散，瘟神退走。村民们修好熄灭的灯，清理残雾，全村重新亮起。' }] },
+        lines: [{ who: 'narr', text: '第一声鸡鸣穿过薄雾，天边泛起暖色。谁家的灯歪了，邻居就扶一扶；谁家还没开门，就有人轻轻喊一声。' }] },
       { bg: 'bg_pattern', build(s) {
           actor(s, 'char_elder', W / 2, H + 40, 600, 'up');
           actor(s, 'char_dragon', 200, H + 40, 560, 'left'); actor(s, 'char_tiger', W - 200, H + 40, 560, 'right');
         },
-        lines: [{ who: 'carp', text: '这一夜，多亏了大家守望相助。' },
-                { who: 'dragon', text: '在素灯上画上我们龙虎的纹样，再题一句吉语，把今晚记下来吧。' }] }
+        lines: [{ who: 'carp', text: '守到天亮才知道，撑住这条巷子的，不只是灯架，是一双双没有松开的手。' },
+                { who: 'dragon', text: '在灯上画些纹样吧，再写一句你最想留给大家的话。来年看到它，就会想起今夜。' }] }
     ],
     next: ['Act', { act: 4 }]
   }
@@ -210,7 +207,7 @@ class StoryScene extends Phaser.Scene {
       this.add.image(W / 2, H / 2, S.bg).setDisplaySize(W, H).setDepth(-10);
       S.build && S.build(this);
     }, () => {
-      this.time.delayedCall(S.wait ?? 450, () => { if (!this._leaving) this.dlg = dialog(this, S.lines, () => this.nextShot()); });
+      this.time.delayedCall(S.wait ?? 450, () => { if (!this._leaving) this.dlg = dialog(this, S.lines, () => this.nextShot(), { portraits: this.story !== STORIES.B }); });
     });
   }
   finish() {

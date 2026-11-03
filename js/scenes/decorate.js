@@ -24,7 +24,7 @@ class DecorateScene extends Phaser.Scene {
   create() {
     fadeIn(this, ['finished', 'drawing', 'rt', 'brush', 'dragonImg', 'tigerImg', 'done']);
     this.add.image(W / 2, H / 2, 'bg_pattern').setDisplaySize(W, H);
-    this.hud = hud(this, '交互 4 · 画灯题字', '沿着淡淡的轮廓描出龙纹');
+    this.hud = hud(this, '天明 · 落笔祈愿', '沿着淡淡的轮廓描出龙纹');
     this.LX = 667; this.LY = 408;
     this.lamp = drawFinalLamp(this, this.LX, this.LY, 1, { patterns: false, blessing: false });
     this.canMask = this.renderer.type === Phaser.WEBGL;

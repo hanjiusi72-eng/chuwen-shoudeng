@@ -1,7 +1,7 @@
 /* 除瘟守灯 · 核心：常量、全局状态、通用 UI、音效 */
 const W = 1334, H = 750;
-const FONT = '"Songti SC","STSongti-SC","Noto Serif SC","Source Han Serif SC","SimSun",serif';
-const FONT_SANS = '"PingFang SC","Noto Sans SC","Microsoft YaHei",sans-serif';
+const FONT = '"Changming Hei","PingFang SC","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+const FONT_SANS = FONT;
 const TEXT_RES = Math.min(2, window.devicePixelRatio || 1) + 0.5;
 
 const C = {
@@ -16,6 +16,7 @@ const G = {
   reset() {
     Object.assign(this, {
       bookOpened: false, bookPageIndex: 0,
+      gathered: new Set(), gatherPosition: 0, gatheringDone: false,
       healedTiger: false, healedDragon: false,
       purchased: new Set(), effectsDone: new Set(), prepared: [],
       carpenterRescued: false, craftUnlocked: false, lampCrafted: false,
@@ -32,7 +33,7 @@ const WHO = {
   tiger:  { name: '白额虎', head: 'head_tiger', color: C.orange },
   dragon: { name: '青龙',   head: 'head_dragon', color: C.green },
   wu:     { name: '吴夲 · 保生大帝', head: 'head_baosheng', color: C.magenta },
-  carp:   { name: '木匠',   head: 'head_elder', color: C.blue },
+  carp:   { name: '陈伯 · 木匠',   head: 'head_elder', color: C.blue },
   me:     { name: '学徒（你）', head: null, color: C.ink },
   narr:   { name: '', head: null, color: C.ink }
 };
@@ -180,7 +181,7 @@ function dialog(scene, lines, onDone, opt = {}) {
     i++;
     if (i >= lines.length) { stopTyping(); c.destroy(); onDone && onDone(); return; }
     const L = lines[i], who = WHO[L.who] || WHO.narr;
-    if (who.head) {
+    if (who.head && opt.portraits !== false) {
       head.setTexture(who.head).setVisible(true);
       const s = Math.min(150 / head.width, 140 / head.height); head.setScale(s);
       body.x = 230; body.setWordWrapWidth(W - 330);
@@ -212,6 +213,7 @@ function goTo(scene, key, data) {
 }
 function fadeIn(scene, transient = []) {
   scene._leaving = false;
+  scene.input.enabled = true;
   transient.forEach(k => { scene[k] = undefined; });
   scene.cameras.main.fadeIn(380, 20, 6, 24);
 }
@@ -258,7 +260,7 @@ const SFX = (() => {
   };
   return {
     unlock: ac,
-    toggle() { muted = !muted; return muted; },
+    toggle() { muted = !muted; BGM.setMuted(muted); return muted; },
     get muted() { return muted; },
     click() { tone(880, 0.06, 'triangle', 0.08); },
     drop() { tone(520, 0.1, 'sine', 0.14, 200); },
@@ -275,9 +277,25 @@ const SFX = (() => {
   };
 })();
 
-/* 静音按钮（各场景右下角） */
+/* 原创五声音阶配乐：首次交互后播放，跨场景连续，后台自动暂停。 */
+const BGM = (() => {
+  const audio = new Audio('assets/changming-festival.mp3');
+  audio.loop = true; audio.preload = 'auto'; audio.volume = 0.32;
+  let started = false, muted = false;
+  const start = () => { started = true; if (!muted && !document.hidden) audio.play().catch(() => {}); };
+  document.addEventListener('pointerdown', start, { passive: true });
+  document.addEventListener('keydown', start);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) audio.pause(); else if (started && !muted) start();
+  });
+  return { start, audio, setMuted(value) { muted = value; audio.muted = value; if (value) audio.pause(); else start(); } };
+})();
+
+/* 各场景共用声音开关 */
 function muteButton(scene) {
-  const t = T(scene, W - 26, H - 22, SFX.muted ? '🔇' : '🔊', 22, '#fff', { ox: 1, sans: true }).setDepth(2000).setInteractive({ useHandCursor: true });
-  t.on('pointerup', () => t.setText(SFX.toggle() ? '🔇' : '🔊'));
+  const t = T(scene, W - 22, H - 22, SFX.muted ? '乐声 · 关' : '乐声 · 开', 16, '#fff8d0', {
+    ox: 1, sans: true, stroke: '#2a1030', strokeThickness: 4
+  }).setDepth(2000).setInteractive({ useHandCursor: true });
+  t.on('pointerup', () => t.setText(SFX.toggle() ? '乐声 · 关' : '乐声 · 开'));
   return t;
 }

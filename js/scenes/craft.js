@@ -4,7 +4,7 @@ class CraftScene extends Phaser.Scene {
   create() {
     fadeIn(this, ['bub']);
     this.step = 0; this.frameParts = new Set(); this.busy = false;
-    this.hud = hud(this, '交互 2C · 木匠家', '跟着木匠，亲手扎一盏素灯');
+    this.hud = hud(this, '陈伯的家 · 竹篾有情', '跟着木匠，亲手扎一盏素灯');
     // 屋内
     const g = this.add.graphics();
     g.fillStyle(0xffe9b8, 1); g.fillRect(0, 0, W, H);
@@ -51,8 +51,8 @@ class CraftScene extends Phaser.Scene {
     muteButton(this);
     this.refresh();
     this.time.delayedCall(400, () => dialog(this, [
-      { who: 'carp', text: '扎灯不难，分四步：扎骨架、糊灯面、装灯芯、添灯油。' },
-      { who: 'carp', text: '从右边托盘里把材料拖到中间虚线的位置，我一步步教你。' }
+      { who: 'carp', text: '我年轻那会儿，父亲也是这样教我扎灯的。先弯竹篾，再糊棉纸，装好灯芯，添一勺油。' },
+      { who: 'carp', text: '从右边取材料，放到桌上的虚线里。别怕弄歪，手艺都是慢慢学来的，我陪着你。' }
     ]));
   }
   stepPanel() {
@@ -156,8 +156,8 @@ class CraftScene extends Phaser.Scene {
       G.lampCrafted = true;
       sparkle(this, this.LX, this.LY, C.yellow, 30);
       this.time.delayedCall(1600, () => dialog(this, [
-        { who: 'carp', text: '好手艺！灯面先留白，等驱完瘟再画上龙虎。' },
-        { who: 'carp', text: '乡亲们，照着这盏灯扎起来！家家门前都挂上一盏！' }
+        { who: 'carp', text: '瞧，这不就成了！我这双老手教出的灯，今天又多了一盏。灯面先留白，天亮后再画。' },
+        { who: 'carp', text: '来呀，乡亲们，桌边再挤挤！照着这盏做，让今夜每扇门前都有光。' }
       ], () => goTo(this, 'Story', { id: 'C' })));
     }
   }

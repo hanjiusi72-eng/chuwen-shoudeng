@@ -11,12 +11,12 @@ class EndingScene extends Phaser.Scene {
     this.tapZone.on('pointerup', () => this.next());
     const b = BLESSINGS.find(b => b.id === G.blessingId) || BLESSINGS[0];
     this.shots = [
-      { cap: `这是你亲手扎、亲手画的龙虎灯——“${b.text}”。`, build: s => {
+      { cap: `竹篾是你弯的，纹样是你画的。这盏灯，替你说一句——“${b.text}”。`, build: s => {
           s.add.image(W / 2, H / 2, 'bg_pattern').setDisplaySize(W, H);
           const l = drawFinalLamp(s, W / 2, 340, 1.05, { lit: true, glow: true }); l.setScale(0.6); s.tweens.add({ targets: l, scale: 1, duration: 1800, ease: 'Cubic.out' });
           s.tweens.add({ targets: l, angle: { from: -2, to: 2 }, yoyo: true, repeat: -1, duration: 1500 });
         } },
-      { cap: '村民们把各自画好的龙虎灯挂在门前，灯火连成一片。', build: s => {
+      { cap: '一扇门，一盏灯。抬头看，整条巷子都接住了你手里的光。', build: s => {
           s.add.image(W / 2, H / 2, 'bg_village').setDisplaySize(W, H);
           const dusk = s.add.image(W / 2, H / 2, 'bg_village_night').setDisplaySize(W, H).setAlpha(0); s.tweens.add({ targets: dusk, alpha: 0.9, duration: 1500 });
           const spots = VILLAGE_LAMPS.concat([{ x: 220, y: 300 }, { x: 980, y: 260 }, { x: 1080, y: 420 }, { x: 700, y: 560 }, { x: 330, y: 520 }]);
@@ -25,7 +25,7 @@ class EndingScene extends Phaser.Scene {
             const l = drawFinalLamp(s, p.x, p.y, 0.16, { lit: true, blessing: false }); l.setScale(0); s.tweens.add({ targets: l, scale: 1, duration: 400, ease: 'Back.out' }); SFX.light();
           }));
         } },
-      { cap: '送王船出海，把瘟疫与灾厄一并送走。', build: s => {
+      { cap: '锣鼓送王船远行。把旧日的阴霾送走，把团圆与盼头留下。', build: s => {
           const g = s.add.graphics(); g.fillStyle(0xff9cd4, 1); g.fillRect(0, 0, W, H); g.fillStyle(0xffb030, 1); g.fillCircle(W - 260, 230, 110);
           g.fillStyle(C.blue, 1); g.fillRect(0, 430, W, H - 430);
           g.fillStyle(C.cyan, 1); for (let y = 450; y < H; y += 40) for (let x = (y / 40 % 2) * 40; x < W + 80; x += 80) { g.fillCircle(x, y, 26); }
@@ -34,7 +34,7 @@ class EndingScene extends Phaser.Scene {
           s.tweens.add({ targets: boat, angle: { from: -3, to: 3 }, y: 428, yoyo: true, repeat: -1, duration: 900 });
           for (let i = 0; i < 4; i++) { const gh = s.add.image(-140 - i * 60, 330 - i * 20, 'ghost').setScale(0.26).setAlpha(0.9); s.tweens.add({ targets: gh, x: W + 160, duration: 7200, delay: 150, ease: 'Sine.inOut' }); }
         } },
-      { cap: '医者仁心，龙虎相护，邻里同心——这盏灯的光，岁岁年年传下去。', build: s => {
+      { cap: '原来长明的，不只是一盏灯。是有人记得你，有人等你回家。', build: s => {
           s.add.image(W / 2, H / 2, 'bg_pattern').setDisplaySize(W, H);
           actor(s, 'char_dragon', 230, H + 40, 600, 'left'); actor(s, 'char_baosheng', W / 2, H + 10, 520, 'up', 300); actor(s, 'char_tiger', W - 230, H + 40, 600, 'right');
           const l = drawFinalLamp(s, W / 2, 210, 0.42, { lit: true, glow: true });
@@ -68,10 +68,10 @@ class FinishScene extends Phaser.Scene {
     this.add.image(W / 2, H / 2, 'bg_pattern').setDisplaySize(W, H);
     panel(this, 120, 70, W - 240, 610, { fill: C.blue, stroke: C.yellow, lw: 6, r: 30 });
     drawFinalLamp(this, 420, 380, 0.82, { lit: true, glow: true });
-    T(this, 880, 170, '龙 虎 灯 · 完 成', 44, '#fbf5a2', { bold: true, stroke: '#ff00c8', strokeThickness: 8 });
+    T(this, 880, 170, '长 明 · 灯 火 归 人', 44, '#fbf5a2', { bold: true, stroke: '#ff00c8', strokeThickness: 8 });
     const b = BLESSINGS.find(b => b.id === G.blessingId);
     T(this, 880, 250, `你的吉语：“${b ? b.text : '—'}”`, 24, '#ffffff');
-    T(this, 880, 330, '治虎取簪 · 医龙点眼 · 市集采购 · 功效制药\n救治木匠 · 扎制素灯 · 守灯到天明 · 画龙虎题吉语', 18, '#cfe0ff', { sans: true, align: 'center', lineSpacing: 10 });
+    T(this, 880, 330, '一篓药香，一双援手，一夜守望。\n谢谢你，让这条巷子又亮了起来。', 18, '#cfe0ff', { sans: true, align: 'center', lineSpacing: 10 });
     T(this, 880, 410, '游戏中的药方仅为互动内容，不作现实用药建议。', 14, '#ffd0ee', { sans: true });
     button(this, 760, 500, '重看结尾', () => goTo(this, 'Ending'), { w: 200, h: 60, size: 22, fill: C.green, edge: 0x118a5a });
     button(this, 1000, 500, '重新体验', () => this.confirmRestart(), { w: 200, h: 60, size: 22 });
