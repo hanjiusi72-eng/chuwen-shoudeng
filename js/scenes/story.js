@@ -20,8 +20,7 @@ const STORIES = {
     shots: [
       // 与修订稿一致：满幅粉红几何纹样，保生大帝居中近景。
       { bg: 'bg_pattern', build(s) { actor(s, 'char_baosheng', W / 2, H, H, 'up'); },
-        lines: [{ who: 'narr', text: '闽南白礁，有位医者叫吴夲。他一生悬壶行医、救人无数，人们尊称他——“保生大帝”。' },
-                { who: 'wu', text: '徒儿，你看村里屋檐下的灯，都暗了。暑气不退，病气却一家一家地传……' },
+        lines: [{ who: 'wu', text: '徒儿，你看村里屋檐下的灯，都暗了。暑气不退，病气却一家一家地传……' },
                 { who: 'wu', text: '药庐里的存药快见底了。备好药囊，随我上山采药去。听说山路不太平，路上多留心。' }] },
       // 保留原画的亮黄地面与蓝黄格纹，不再叠加暗色蒙版。
       { bg: 'bg_village',
@@ -70,7 +69,7 @@ const STORIES = {
         lines: [{ who: 'dragon', text: '再送你一盏素灯。灯面先空着——等村里的灯都亮起来，再好好装点它。' },
                 { who: 'tiger', text: '记住：灯光亮，锣鼓响，瘟神疫鬼就不敢近身！' }] }
     ],
-    next: ['Act', { act: 2 }]
+    next: ['Medicine', { mode: 'effects' }]
   },
   B: {
     title: '剧情 B · 灯下传艺',
@@ -137,7 +136,7 @@ const STORIES = {
         lines: [{ who: 'narr', text: '入夜，风变了调。瘟神带着疫鬼进村，阴风所过，灯火一盏盏发抖……' },
                 { who: 'tiger', text: '别怕！守住灯，就是守住家。我们陪你守到天明！' }] }
     ],
-    next: ['Act', { act: 3 }]
+    next: ['Defense']
   },
   D: {
     title: '剧情 D · 天明',
@@ -158,7 +157,7 @@ const STORIES = {
         lines: [{ who: 'carp', text: '这一夜，是大家把灯守住的。这份情义，村里人一辈子记得。' },
                 { who: 'dragon', text: '在素灯上画上我们龙虎的纹样，再题一句吉语——把这一夜的光，留在灯上，也留在心里。' }] }
     ],
-    next: ['Act', { act: 4 }]
+    next: ['Decorate']
   }
 };
 

@@ -9,6 +9,7 @@ class BootScene extends Phaser.Scene {
     this.load.on('progress', p => { g.clear(); g.fillStyle(C.ink, 1); g.fillRoundedRect(W / 2 - 200, H / 2, 400, 18, 9); g.fillStyle(C.magenta, 1); g.fillRoundedRect(W / 2 - 200, H / 2, 400 * p, 18, 9); });
     const A = 'assets/', V = '?v=' + ASSET_VERSION, V2 = 'assets/v2/';
     ['bg_pharmacy', 'bg_shrine', 'bg_pattern', 'bg_village', 'bg_village_dim', 'bg_village_night', 'bg_board'].forEach(k => this.load.image(k, A + k + '.jpg' + V));
+    ['end_photo', 'end_photo2'].forEach(k => this.load.image(k, V2 + k + '.jpg' + V));
     ['char_dragon', 'char_elder', 'char_tiger', 'char_baosheng', 'head_dragon', 'head_elder', 'head_tiger', 'head_baosheng',
       'book_slips', 'scrolls', 'fan', 'stove', 'mortar', 'pattern_dragon', 'pattern_tiger', 'card_dragon', 'card_tiger',
       'ghost', 'wenshen', 'fig_dragon', 'fig_tiger', 'fig_carp']
