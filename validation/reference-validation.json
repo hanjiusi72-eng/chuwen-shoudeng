@@ -1,0 +1,83 @@
+{
+  "results": {
+    "journey": {
+      "checks": [
+        "四段远端序言文案在粉色纹样上连续翻页",
+        "序言在同页叠化接入采药，转场遮罩自动清理",
+        "真实掷骰、移动与采药仍可工作",
+        "龙虎赠灯直连制药，天明直连同页灯坊",
+        "同页进入实时 WebGL 纸灯，灯坊背景及本地素材加载成功",
+        "真实拖动可旋转三维灯笼",
+        "画笔通过射线命中纸灯表面，真实描画后才能继续",
+        "重画、龙纹和虎纹工具更新灯面纹理",
+        "自定义心愿实时题写，完成后暖光点亮",
+        "成灯后可独立切换点亮与熄灯",
+        "保存我的灯实际下载有效的 1600×1200 PNG 图片",
+        "灯坊音量按钮控制同一个音乐与音效总线",
+        "跨采药和灯坊音频上下文不重建，小节递增，六次真实音频采样均非静音",
+        "退出释放渲染器和事件，重新进入不叠加灯坊或音轨",
+        "844×390 触屏可完成绘纹题字点亮，无横向溢出",
+        "本轮浏览器无未捕获异常、无 HTTP 素材失败"
+      ],
+      "errors": [],
+      "assetFailures": [],
+      "audioEnergy": [
+        0.00016122341239080515,
+        0.0001183278759084405,
+        0.00013265059046507522,
+        0.0006853078600644483,
+        0.000328708462082751,
+        0.0002435369051870605
+      ]
+    },
+    "core-regression": {
+      "checks": [
+        "序章使用原始粉红几何纹样和满高人物",
+        "村庄使用原始明亮背景，无旧暗色蒙版",
+        "采药棋盘15格完整，初次进入不弹遮挡棋盘的对白",
+        "真实点击骰子后棋子按骰面前进并沿途采药",
+        "第7格掷骰在第8格遇虎，保留剧情",
+        "浏览器无未捕获异常",
+        "本地素材HTTP全部成功"
+      ],
+      "errors": [],
+      "assetFailures": []
+    },
+    "medicine": {
+      "checks": [
+        "E1 four herbs dragged into mortar",
+        "Warm apricot round medicine pearl renders",
+        "Pearl drag into kettle completes E1",
+        "E2 repeats at full round size with draggable enabled",
+        "E2 brewing completes",
+        "No uncaught browser errors"
+      ],
+      "errors": []
+    },
+    "offline": {
+      "checks": [
+        "单文件HTML标题与画面正常，无外部脚本或素材依赖",
+        "离线版真实掷骰、移动与采药成功",
+        "离线版药庐素材与拖药交互成功",
+        "离线版新圆球药泥贴图已生成",
+        "守灯、画灯、完成页均可离线进入",
+        "新灯坊可离线绘纹、题写心愿并点亮",
+        "除HTML文档本身外无HTTP网络请求",
+        "无未捕获浏览器异常"
+      ],
+      "network": [],
+      "errors": []
+    },
+    "webgl-fallback": {
+      "checks": [
+        "WebGL unavailable selects 2D fallback",
+        "Pattern, custom wish and light work without WebGL",
+        "Fallback actually downloads a nonempty PNG",
+        "No uncaught browser exceptions"
+      ]
+    }
+  },
+  "limitations": [
+    "Physical phones and Safari file:// launch were not tested; mobile checks used Chromium touch emulation."
+  ]
+}

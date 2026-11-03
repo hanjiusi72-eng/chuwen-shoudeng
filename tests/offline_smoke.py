@@ -12,7 +12,7 @@ with sync_playwright() as p:
  page.on('request',lambda r:network.append(r.url) if r.url.startswith(('http://','https://')) and not r.url.endswith('/showcase/downloads/guangliang-offline.html') else None)
  page.goto('http://127.0.0.1:8686/showcase/downloads/guangliang-offline.html');page.wait_for_function('window.game?.scene.isActive("Title")',timeout=60000);page.wait_for_timeout(800)
  assert page.title()=='光亮 · 龙虎灯';checks.append('单文件HTML标题与画面正常，无外部脚本或素材依赖')
- page.mouse.click(667,585);page.wait_for_timeout(250);page.mouse.click(517,205);page.wait_for_function('game.scene.isActive("Forage")');page.wait_for_timeout(1000)
+ page.locator(".chapters").click();page.wait_for_timeout(250);page.mouse.click(817,195);page.wait_for_function('game.scene.isActive("Forage")');page.wait_for_timeout(1000)
  page.mouse.click(1220,668);page.wait_for_function('G.foragePos>0 && !game.scene.getScene("Forage").walking');assert page.evaluate('G.forageGot.length')>0;checks.append('离线版真实掷骰、移动与采药成功')
  page.evaluate('game.scene.stop("Forage");G.reset();game.scene.start("Medicine",{mode:"effects"})');page.wait_for_timeout(1200)
  for _ in range(5):page.mouse.click(700,680);page.wait_for_timeout(180)

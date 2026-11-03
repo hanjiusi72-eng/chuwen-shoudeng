@@ -17,7 +17,7 @@ loader='<script>window.__OFFLINE_ASSETS='+json.dumps(assets,separators=(',',':')
 seen=0
 def inline(m):
  global seen
- name=m[1].split('?')[0];js=(ROOT/name).read_text()
+ name=m[1].split('?')[0];js='\n'.join(line.rstrip() for line in (ROOT/name).read_text().split('\n'))
  if name=='js/scenes/boot.js':
   js=js.replace('preload() {', '''preload() {
     const imageLoader=this.load.image.bind(this.load);

@@ -1,65 +1,42 @@
-/* 结尾动画（可跳过）+ 完成页 */
+/* 尾声 · 灯与人（同视频结尾：照片暗背景上的收束页）+ 完成页 */
 class EndingScene extends Phaser.Scene {
   constructor() { super('Ending'); }
   create() {
-    fadeIn(this, ['lock', 'auto']);
+    fadeIn(this, ['art']);
+    this.add.image(W / 2, H / 2, this.textures.exists('end_photo2') ? 'end_photo2' : 'bg_village_dim').setDisplaySize(W, H);
+    this.add.rectangle(W / 2, H / 2, W, H, 0x0b0806, 0.66);
+    const grad = this.add.graphics().setDepth(1);
+    grad.fillGradientStyle(0x0b0806, 0x0b0806, 0x0b0806, 0x000000, 0.0, 0.0, 0.7, 0.5);
+    grad.fillRect(0, 0, W, 210);
+    grad.fillGradientStyle(0x000000, 0x000000, 0x0b0806, 0x0b0806, 0.5, 0.5, 0.0, 0.0);
+    grad.fillRect(0, H - 190, W, 190);
     BGM.setMode('festive');
-    this.shot = -1; this.layer = null;
-    const top = this.add.container(0, 0).setDepth(1400);
-    top.add(button(this, W - 110, 36, '跳过动画 ▸▸', () => this.toFinish(), { w: 180, h: 46, size: 18, fill: C.ink, edge: 0x000000, line: C.magenta }));
-    this.cap = T(this, W / 2, H - 70, '', 26, '#fff8d0', { bold: true, wrap: 1000, align: 'center', stroke: '#2a1030', strokeThickness: 7 }).setDepth(1300);
-    this.tapZone = this.add.zone(W / 2, H / 2 + 40, W, H - 80).setInteractive().setDepth(1);
-    this.tapZone.on('pointerup', () => this.next());
-    const b = BLESSINGS.find(b => b.id === G.blessingId) || BLESSINGS[0];
-    this.shots = [
-      { cap: `这是你亲手扎、亲手画的龙虎灯——“${b.text}”。`, build: s => {
-          s.add.image(W / 2, H / 2, 'bg_pattern').setDisplaySize(W, H);
-          const l = drawFinalLamp(s, W / 2, 340, 1.05, { lit: true, glow: true }); l.setScale(0.6); s.tweens.add({ targets: l, scale: 1, duration: 1800, ease: 'Cubic.out' });
-          s.tweens.add({ targets: l, angle: { from: -2, to: 2 }, yoyo: true, repeat: -1, duration: 1500 });
-        } },
-      { cap: '乡亲们把各自画好的灯挂满村巷，一点一点，连成了地上的星河。', build: s => {
-          s.add.image(W / 2, H / 2, 'bg_village').setDisplaySize(W, H);
-          const dusk = s.add.image(W / 2, H / 2, 'bg_village_night').setDisplaySize(W, H).setAlpha(0); s.tweens.add({ targets: dusk, alpha: 0.9, duration: 1500 });
-          const spots = VILLAGE_LAMPS.concat([{ x: 220, y: 300 }, { x: 980, y: 260 }, { x: 1080, y: 420 }, { x: 700, y: 560 }, { x: 330, y: 520 }]);
-          spots.forEach((p, i) => s.time.delayedCall(500 + i * 220, () => {
-            s.add.image(p.x, p.y, 'glow').setTint(0xffc040).setBlendMode(Phaser.BlendModes.ADD).setScale(0.9);
-            const l = drawFinalLamp(s, p.x, p.y, 0.16, { lit: true, blessing: false }); l.setScale(0); s.tweens.add({ targets: l, scale: 1, duration: 400, ease: 'Back.out' }); SFX.light();
-          }));
-        } },
-      { cap: '送王船出海，把病气与晦气都送走，留下满村的平安。', build: s => {
-          const g = s.add.graphics(); g.fillStyle(0xff9cd4, 1); g.fillRect(0, 0, W, H); g.fillStyle(0xffb030, 1); g.fillCircle(W - 260, 230, 110);
-          g.fillStyle(C.blue, 1); g.fillRect(0, 430, W, H - 430);
-          g.fillStyle(C.cyan, 1); for (let y = 450; y < H; y += 40) for (let x = (y / 40 % 2) * 40; x < W + 80; x += 80) { g.fillCircle(x, y, 26); }
-          g.fillStyle(C.blue, 1); for (let y = 470; y < H; y += 40) for (let x = (y / 40 % 2) * 40; x < W + 80; x += 80) { g.fillCircle(x, y, 20); }
-          const boat = s.add.image(-200, 420, 'boat').setScale(1.1); s.tweens.add({ targets: boat, x: W + 220, duration: 7000, ease: 'Sine.inOut' });
-          s.tweens.add({ targets: boat, angle: { from: -3, to: 3 }, y: 428, yoyo: true, repeat: -1, duration: 900 });
-          for (let i = 0; i < 4; i++) { const gh = s.add.image(-140 - i * 60, 330 - i * 20, 'ghost').setScale(0.26).setAlpha(0.9); s.tweens.add({ targets: gh, x: W + 160, duration: 7200, delay: 150, ease: 'Sine.inOut' }); }
-        } },
-      { cap: '医者仁心，龙虎相护，邻里同心——这盏灯的光，岁岁年年，传下去。', build: s => {
-          s.add.image(W / 2, H / 2, 'bg_pattern').setDisplaySize(W, H);
-          actor(s, 'char_dragon', 230, H + 40, 600, 'left'); actor(s, 'char_baosheng', W / 2, H + 10, 520, 'up', 300); actor(s, 'char_tiger', W - 230, H + 40, 600, 'right');
-          const l = drawFinalLamp(s, W / 2, 210, 0.42, { lit: true, glow: true });
-          s.tweens.add({ targets: l, y: 200, yoyo: true, repeat: -1, duration: 1400 });
-        } }
-    ];
+
+    T(this, 42, 56, '尾 声 · 灯 与 人', 17, '#c9a45a', { ox: 0, style: { fontFamily: SERIF } }).setDepth(2);
+    T(this, 42, 104, '灯已成，手艺仍在延续', 40, '#f3e9d2', { ox: 0, style: { fontFamily: SERIF } }).setDepth(2);
+    T(this, 44, 146, '从一双手，到下一双手。', 15, '#9a8f80', { ox: 0, sans: true }).setDepth(2);
     muteButton(this);
-    this.director = shotDirector(this);
-    this.next();
+
+    /* 左侧：你这盏灯 */
+    const word = G.blessingText || '平安';
+    const pat = G.lampPattern || 'tiger';
+    drawWishLantern(this, 218, 428, 0.8, { glow: true, pattern: pat, patColor: 0xd84545, blessing: word }).c.setDepth(3);
+    T(this, 218, 700, '归来总有一盏灯。', 15, '#9a8f80', { style: { fontFamily: SERIF } }).setDepth(2);
+
+    /* 右侧：老街的灯坊 */
+    const ax = 712;
+    const art = this.add.container(0, 0).setDepth(10);
+    const kicker = T(this, ax, 228, '一 盏 灯 · 四 代 人', 15, '#c9a45a', { ox: 0, style: { fontFamily: SERIF } });
+    const heading = T(this, ax, 266, '老街里的灯，还在做', 30, '#f3e9d2', { ox: 0, style: { fontFamily: SERIF } });
+    const p1 = T(this, ax, 330, '同安松柏林老街，一家人守着传了几代的灯坊，快半个世纪。竹篾为骨，棉纸为面，灯面上绘龙虎——让古老的纹样，一盏一盏，亮在灯上。', 16, '#c8bba4', { ox: 0, oy: 0, wrap: 470, sans: true, lineSpacing: 9 });
+    const p2 = T(this, ax, 442, '2008 年，同安龙虎灯列入国家级非物质文化遗产名录。如今新一代接过灯坊，守着四代人的老手艺，也试着用新的方式，把灯讲给更多人听。', 16, '#c8bba4', { ox: 0, oy: 0, wrap: 470, sans: true, lineSpacing: 9 });
+    const p3 = T(this, ax, 554, '从父亲教孩子画虎，到孩子描出第一笔，灯火就在一双双手里传递。愿你再见龙虎灯时，记得灯上的笔意，也记得灯下的人。', 16, '#c8bba4', { ox: 0, oy: 0, wrap: 470, sans: true, lineSpacing: 9 });
+    art.add([kicker, heading, p1, p2, p3]);
+    art.setAlpha(0);
+    this.tweens.add({ targets: art, alpha: 1, duration: 900, delay: 300 });
+
+    button(this, W - 130, H - 34, '再点一盏灯 ↺', () => { G.reset(); goTo(this, 'Title'); }, { w: 200, h: 50, size: 19, fill: C.ink, edge: 0x000000, line: C.magenta }).setDepth(2);
   }
-  next() {
-    if (this.lock || this._leaving) return;
-    this.lock = true;
-    this.shot++;
-    if (this.shot >= this.shots.length) return this.toFinish();
-    const S = this.shots[this.shot];
-    this.cap.setAlpha(0);
-    this.director.cut(() => S.build(this), () => {
-      this.lock = false;
-      this.cap.setText(S.cap); this.tweens.add({ targets: this.cap, alpha: 1, duration: 500 });
-      this.time.delayedCall(this.shot === 2 ? 7000 : 5200, () => this.next());
-    });
-  }
-  toFinish() { goTo(this, 'Finish'); }
 }
 
 class FinishScene extends Phaser.Scene {
@@ -68,13 +45,12 @@ class FinishScene extends Phaser.Scene {
     fadeIn(this);
     this.add.image(W / 2, H / 2, 'bg_pattern').setDisplaySize(W, H);
     panel(this, 120, 70, W - 240, 610, { fill: C.blue, stroke: C.yellow, lw: 6, r: 30 });
-    drawFinalLamp(this, 420, 380, 0.82, { lit: true, glow: true });
+    drawWishLantern(this, 420, 380, 0.82, { glow: true, pattern: G.lampPattern || 'tiger', patColor: 0xd84545, blessing: G.blessingText || '平安' });
     T(this, 880, 170, '光 亮 · 灯火相传', 44, '#fbf5a2', { bold: true, stroke: '#ff00c8', strokeThickness: 8 });
-    const b = BLESSINGS.find(b => b.id === G.blessingId);
-    T(this, 880, 250, `你的吉语：“${b ? b.text : '—'}”`, 24, '#ffffff');
-    T(this, 880, 330, '入山采药 · 治虎取簪 · 医龙点眼 · 市集寻宝\n药庐制药 · 灯下传艺 · 扎制素灯 · 守夜到天明 · 画灯题吉语', 18, '#cfe0ff', { sans: true, align: 'center', lineSpacing: 10 });
+    T(this, 880, 250, `你的祝福：“${G.blessingText || '平安'}”`, 24, '#ffffff');
+    T(this, 880, 330, '入山采药 · 治虎化符 · 医龙敷眼\n药庐制药 · 灯下传艺 · 扎制素灯 · 守夜到天明 · 落笔心愿', 18, '#cfe0ff', { sans: true, align: 'center', lineSpacing: 10 });
     T(this, 880, 410, '游戏中的药方仅为互动内容，不作现实用药建议。', 14, '#ffd0ee', { sans: true });
-    button(this, 760, 500, '重看结尾', () => goTo(this, 'Ending'), { w: 200, h: 60, size: 22, fill: C.green, edge: 0x118a5a });
+    button(this, 760, 500, '再看尾声', () => goTo(this, 'Ending'), { w: 200, h: 60, size: 22, fill: C.green, edge: 0x118a5a });
     button(this, 1000, 500, '重新体验', () => this.confirmRestart(), { w: 200, h: 60, size: 22 });
     muteButton(this);
   }

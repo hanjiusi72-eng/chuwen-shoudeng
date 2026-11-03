@@ -1,181 +1,166 @@
-/* 交互 4：沿轮廓描画龙纹、虎纹，选择吉语 */
-function drawFinalLamp(scene, x, y, s = 1, opt = {}) {
+/* 交互 4 · 第五幕「画灯」：心愿灯（同视频结尾——暗色照片背景上，选纹样、选祝福，落在白灯笼上） */
+
+/* 白纸灯笼（圆角纸身 + 竖骨 + 金穗），pattern/blessing 可后置点亮 */
+function drawWishLantern(scene, x, y, s = 1, opt = {}) {
   const c = scene.add.container(x, y);
-  if (opt.glow) c.add(scene.add.image(0, 0, 'glow').setTint(0xffd060).setScale(3.2 * s).setAlpha(0.7));
   const g = scene.add.graphics();
-  g.lineStyle(4 * s, 0x7a3a10, 1); g.lineBetween(0, -250 * s, 0, -215 * s);
-  g.fillStyle(C.red, 1); g.fillRoundedRect(-80 * s, -222 * s, 160 * s, 26 * s, 6 * s); g.fillRoundedRect(-80 * s, 196 * s, 160 * s, 26 * s, 6 * s);
-  g.fillStyle(opt.lit ? 0xfff0b0 : 0xfffdf4, 1); g.fillEllipse(0, 0, 380 * s, 430 * s);
-  g.lineStyle(2 * s, 0xe0d4c0, 1); g.strokeEllipse(0, 0, 380 * s, 430 * s); g.strokeEllipse(0, 0, 230 * s, 430 * s);
-  g.fillStyle(C.yellow, 1); g.fillRect(-70 * s, -200 * s, 140 * s, 5 * s); g.fillRect(-70 * s, 194 * s, 140 * s, 5 * s);
-  g.fillStyle(C.magenta, 1); g.fillRect(-6 * s, 222 * s, 12 * s, 14 * s); g.fillTriangle(-16 * s, 266 * s, 16 * s, 266 * s, 0, 232 * s);
+  // 挂绳与提环
+  g.lineStyle(3 * s, 0x8a6a30, 1); g.lineBetween(0, -208 * s, 0, -178 * s);
+  g.fillStyle(0xcaa02a, 1); g.fillRoundedRect(-38 * s, -180 * s, 76 * s, 14 * s, 6 * s);
+  // 纸身
+  g.fillStyle(0xfffdf4, 1); g.fillRoundedRect(-86 * s, -166 * s, 172 * s, 330 * s, 30 * s);
+  g.lineStyle(2 * s, 0xe3dac4, 1); g.strokeRoundedRect(-86 * s, -166 * s, 172 * s, 330 * s, 30 * s);
+  // 竖骨
+  g.lineStyle(2 * s, 0xeadfc6, 0.9);
+  [-52, -26, 0, 26, 52].forEach(rx => g.lineBetween(rx * s, -164 * s, rx * s, 162 * s));
+  // 上下箍
+  g.fillStyle(0xcaa02a, 1); g.fillRoundedRect(-42 * s, -170 * s, 84 * s, 10 * s, 4 * s); g.fillRoundedRect(-42 * s, 162 * s, 84 * s, 12 * s, 5 * s);
+  // 穗子
+  g.lineStyle(3 * s, 0xcaa02a, 1); g.lineBetween(0, 174 * s, 0, 196 * s);
+  g.fillStyle(0xf2c43a, 1); g.fillRoundedRect(-13 * s, 196 * s, 26 * s, 52 * s, 6 * s);
+  g.lineStyle(2 * s, 0xd9a41e, 1);
+  [-7, 0, 7].forEach(rx => g.lineBetween(rx * s, 204 * s, rx * s, 244 * s));
   c.add(g);
-  if (opt.patterns !== false) {
-    c.add(scene.add.image(-74 * s, -50 * s, 'pattern_dragon').setScale(0.4 * s));
-    c.add(scene.add.image(74 * s, -50 * s, 'pattern_tiger').setScale(0.4 * s));
+  if (opt.glow) {
+    const gl = scene.add.image(0, 0, 'glow').setTint(0xfff0c0).setScale(2.4 * s).setAlpha(0.5);
+    c.addAt(gl, 0);
   }
-  const b = BLESSINGS.find(b => b.id === G.blessingId);
-  if (b && opt.blessing !== false) c.add(T(scene, 0, 112 * s, b.text, Math.round(44 * s), '#e8202a', { bold: true }));
-  return c;
+  const ui = { c, pattern: null, chars: [] };
+  if (opt.pattern) {
+    const p = scene.add.image(0, -12 * s, 'pattern_' + opt.pattern).setScale(0.42 * s).setAlpha(0.8);
+    if (opt.patColor) p.setTint(opt.patColor);
+    c.add(p); ui.pattern = p;
+  }
+  if (opt.blessing) ui.chars = wishBlessingChars(scene, c, opt.blessing, s);
+  return ui;
+}
+
+/* 祝福字：竖排写在灯面上（先淡后浓，像落笔） */
+function wishBlessingChars(scene, c, word, s = 1, animated = false) {
+  const col = '#cf1420';
+  const gap = 78 * s;
+  // 字落在纹样下方的空白灯面上
+  const y0 = 60 * s;
+  return word.split('').map((ch, i) => {
+    const t = scene.add.text(0, y0 + i * gap, ch, {
+      fontFamily: SERIF, fontSize: Math.round(64 * s) + 'px', color: col,
+      fontStyle: 'bold', resolution: TEXT_RES
+    }).setOrigin(0.5).setAlpha(animated ? 0.12 : 1);
+    c.add(t);
+    if (animated) {
+      scene.tweens.add({ targets: t, alpha: 1, duration: 620, delay: 260 + i * 360, ease: 'Quad.out' });
+      scene.tweens.add({ targets: t, scale: 1.12, duration: 200, delay: 260 + i * 360, yoyo: true });
+    }
+    return t;
+  });
 }
 
 class DecorateScene extends Phaser.Scene {
   constructor() { super('Decorate'); }
   create() {
-    fadeIn(this, ['finished', 'drawing', 'rt', 'brush', 'dragonImg', 'tigerImg', 'done']);
-    this.add.image(W / 2, H / 2, 'bg_pattern').setDisplaySize(W, H);
-    this.hud = hud(this, '交互 4 · 画灯题字', '沿着淡淡的轮廓描出龙纹');
-    this.LX = 667; this.LY = 408;
-    this.lamp = drawFinalLamp(this, this.LX, this.LY, 1, { patterns: false, blessing: false });
-    this.canMask = this.renderer.type === Phaser.WEBGL;
-    this.stage = 'dragon';
-    this.leftPanel();
-    this.rightPanel();
-    this.blessText = T(this, this.LX, this.LY + 112, '', 44, '#e8202a', { bold: true }).setDepth(50);
-    this.startPattern('dragon');
-    this.input.on('pointerdown', p => this.penDown(p));
-    this.input.on('pointermove', p => this.penMove(p));
-    this.input.on('pointerup', () => { this.drawing = false; });
-    this.input.on('gameout', () => { this.drawing = false; });
-    muteButton(this);
-    this.time.delayedCall(400, () => dialog(this, [{ who: 'dragon', text: '用手指按住，沿着灯面上淡淡的龙纹来回描。描出八成，剩下的我替你收笔——师父也是这样教我的。' }]));
-  }
-  leftPanel() {
-    panel(this, 28, 86, 300, 420, { fill: C.cream });
-    T(this, 178, 116, '画 灯 步 骤', 21, '#9a0078', { bold: true });
-    this.stepT = ['① 描龙纹', '② 描虎纹', '③ 选一句吉语', '④ 完成这盏灯'].map((s, i) => T(this, 60, 166 + i * 44, s, 20, '#8a8a96', { ox: 0 }));
-    this.progT = T(this, 178, 352, '', 18, '#2a1030', { sans: true });
-    this.progG = this.add.graphics();
-    this.clearB = button(this, 178, 444, '重描这一笔', () => this.clearCurrent(), { w: 220, h: 50, size: 19, fill: C.blue, edge: 0x00248a });
-    T(this, 178, 545, '描到轮廓外不扣分，\n可以放心地描。', 16, '#fff8d0', { sans: true, align: 'center', stroke: '#9a0078', strokeThickness: 4 });
-  }
-  rightPanel() {
-    this.rp = this.add.container(0, 0);
-    this.rp.add(panel(this, 1006, 86, 300, 470, { fill: C.cream }));
-    this.rp.add(T(this, 1156, 116, '吉 语', 22, '#9a0078', { bold: true }));
-    this.rpHint = T(this, 1156, 300, '先描好龙纹和虎纹，\n再来挑选吉语。', 18, '#6a6a7a', { sans: true, align: 'center' });
-    this.rp.add(this.rpHint);
-    this.bBtns = BLESSINGS.map((b, i) => {
-      const btn = button(this, 1156, 196 + i * 90, b.text, () => this.pickBlessing(b), { w: 220, h: 62, size: 28, fill: 0xffffff, edge: C.magenta, color: '#e8202a', line: C.magenta });
-      btn.setVisible(false); this.rp.add(btn); return btn;
-    });
-    this.doneB = button(this, 1156, 640, '完成这盏灯 ✔', () => this.finish(), { w: 250, h: 62, size: 23 });
-    this.doneB.setVisible(false);
-  }
-  refreshSteps() {
-    const idx = { dragon: 0, tiger: 1, bless: 2 }[this.stage];
-    this.stepT.forEach((t, i) => { t.setColor(i < idx ? '#118a5a' : i === idx ? '#e8007a' : '#8a8a96').setFontStyle(i === idx ? 'bold' : 'normal'); t.setText((i < idx ? '✔ ' : '') + t.text.replace('✔ ', '')); });
-  }
+    fadeIn(this, ['chipG', 'lampUI']);
+    // 暗色照片背景（视频同款：匠人工作照压暗）
+    this.add.image(W / 2, H / 2, this.textures.exists('end_photo') ? 'end_photo' : 'bg_village_dim').setDisplaySize(W, H);
+    this.add.rectangle(W / 2, H / 2, W, H, 0x0c0705, 0.56);
+    // 压住照片里烙印的标题/词条，同时给本页文字留出干净区域
+    const grad = this.add.graphics().setDepth(1);
+    grad.fillGradientStyle(0x0c0705, 0x0c0705, 0x0c0705, 0x000000, 0.0, 0.0, 0.72, 0.55);
+    grad.fillRect(0, 0, W, 200);
+    grad.fillGradientStyle(0x000000, 0x000000, 0x0c0705, 0x0c0705, 0.55, 0.55, 0.0, 0.0);
+    grad.fillRect(0, H - 220, W, 220);
+    BGM.setMode('festive');
 
-  /* ---------- 纹样描画 ---------- */
-  startPattern(kind) {
-    this.stage = kind; this.refreshSteps();
-    const key = 'pattern_' + kind, size = 300;
-    const src = this.textures.get(key).getSourceImage();
-    const sc = size / Math.max(src.width, src.height);
-    const x = this.LX, y = this.LY - 20;
-    this.faint = this.add.image(x, y, key).setScale(sc).setAlpha(0.2).setDepth(20);
-    this.full = this.add.image(x, y, key).setScale(sc).setDepth(21);
-    if (this.canMask) {
-      this.rt = this.make.renderTexture({ x, y, width: size + 40, height: size + 40 }, false);
-      this.full.setMask(this.rt.createBitmapMask());
-    } else this.full.setAlpha(0);
-    // 采样点：网格中不透明像素占比 > 25% 的格子
-    const cv = document.createElement('canvas'); cv.width = src.width; cv.height = src.height;
-    const cx = cv.getContext('2d'); cx.drawImage(src, 0, 0);
-    const data = cx.getImageData(0, 0, src.width, src.height).data;
-    const step = 16, pts = [];
-    for (let gy = 0; gy < src.height; gy += step) for (let gx = 0; gx < src.width; gx += step) {
-      let n = 0, tot = 0;
-      for (let yy = gy; yy < Math.min(src.height, gy + step); yy += 2) for (let xx = gx; xx < Math.min(src.width, gx + step); xx += 2) { tot++; if (data[(yy * src.width + xx) * 4 + 3] > 128) n++; }
-      if (n / tot > 0.25) pts.push({ x: x + (gx + step / 2 - src.width / 2) * sc, y: y + (gy + step / 2 - src.height / 2) * sc, hit: false });
-    }
-    this.pts = pts; this.hits = 0; this.sc = sc; this.patX = x; this.patY = y; this.patSize = size;
-    this.done = false;
-    this.hud.setObjective(kind === 'dragon' ? '沿着淡淡的轮廓描出龙纹' : '再描出虎纹');
-    this.updateProg();
+    T(this, 42, 56, '第 五 幕 · 画 灯', 17, '#c9a45a', { ox: 0, style: { fontFamily: SERIF } }).setDepth(2);
+    T(this, 42, 104, '为这盏灯，落下你的心愿', 40, '#f3e9d2', { ox: 0, style: { fontFamily: SERIF } }).setDepth(2);
+    T(this, 44, 146, '同安龙虎灯 · 亲手添彩', 15, '#9a8f80', { ox: 0, sans: true }).setDepth(2);
+    muteButton(this);
+
+    /* 白灯笼（盖住背景照片里同位置的原灯） */
+    this.LX = 670; this.LY = 352;
+    this.lamp = drawWishLantern(this, this.LX, this.LY, 1.12, { glow: true });
+    this.lamp.c.setDepth(3);
+
+    /* 选择：纹样 + 祝福文字 */
+    this.sel = { pattern: 'tiger', bless: null };
+    const rowY = 648;
+    T(this, 96, rowY, '选择纹样', 15, '#9a8f80', { ox: 0, sans: true });
+    this.patternChips = [
+      this.mkChip(206, rowY, '画龙', 'dragon', true),
+      this.mkChip(288, rowY, '画虎', 'tiger', true)
+    ];
+    T(this, 452, rowY, '祝福文字', 15, '#9a8f80', { ox: 0, sans: true });
+    this.blessChips = ['平安', '喜乐', '自由', '多财', '安康'].map((w, i) => this.mkChip(560 + i * 84, rowY, w, w, false));
+
+    /* 毛笔确认按钮 */
+    const bx = 1216, by = rowY - 4;
+    const brush = this.add.container(bx, by).setSize(92, 92).setDepth(60).setInteractive({ useHandCursor: true });
+    const bg2 = this.add.graphics();
+    bg2.fillStyle(0x5a3a10, 1);
+    bg2.fillEllipse(16, -18, 13, 13);      // 笔尾
+    bg2.fillRoundedRect(-9, -30, 18, 8, 3); // 笔箍
+    bg2.fillRect(-2, -24, 9, 32);           // 笔杆
+    bg2.fillTriangle(-5, 8, 7, 8, 0, 27);   // 笔锋
+    brush.add([bg2]);
+    brush.on('pointerup', () => this.confirm());
+    this.tweens.add({ targets: brush, scale: 1.06, yoyo: true, repeat: -1, duration: 900 });
+
+    this.refreshChips();
+    this.applyPattern('tiger');
+    this.time.delayedCall(500, () => dialog(this, [
+      { who: 'dragon', text: '灯面还空着。选一个纹样、一句祝福，让这盏灯带上你的心意——落笔之前，都可以换。' }
+    ]));
   }
-  penDown(p) {
-    if (this.done || this.stage === 'bless' || this.dlgOpen()) return;
-    if (Phaser.Math.Distance.Between(p.x, p.y, this.LX, this.LY) > 260) return;
-    this.drawing = true; this.last = { x: p.x, y: p.y }; this.stamp(p.x, p.y);
+  mkChip(x, y, label, value, isPattern) {
+    const c = this.add.container(x, y).setDepth(55);
+    const g = this.add.graphics();
+    const t = T(this, 0, 0, label, 20, '#e8dcc4', { style: { fontFamily: SERIF } });
+    c.add([g, t]);
+    c.setSize(74, 48).setInteractive({ useHandCursor: true });
+    const redraw = sel => {
+      g.clear();
+      g.fillStyle(sel ? 0xf2e3c0 : 0x241a12, sel ? 0.95 : 0.62);
+      g.fillRoundedRect(-36, -24, 72, 48, 10);
+      if (sel) { g.fillStyle(0xc9a45a, 1); g.fillRect(-18, 15, 36, 4); }
+      t.setColor(sel ? '#3a2410' : '#e8dcc4');
+    };
+    c.redraw = redraw;
+    c.value = value;
+    c.on('pointerup', () => {
+      SFX.pick();
+      if (isPattern) { this.sel.pattern = value; this.applyPattern(value); }
+      else { this.sel.bless = value; this.applyBlessing(value); }
+      this.refreshChips();
+    });
+    redraw(false);
+    return c;
   }
-  penMove(p) {
-    if (!this.drawing || this.done) return;
-    const d = Phaser.Math.Distance.Between(this.last.x, this.last.y, p.x, p.y);
-    const n = Math.max(1, Math.ceil(d / 6));
-    for (let i = 1; i <= n; i++) this.stamp(this.last.x + (p.x - this.last.x) * i / n, this.last.y + (p.y - this.last.y) * i / n);
-    this.last = { x: p.x, y: p.y };
+  refreshChips() {
+    this.patternChips.forEach(ch => ch.redraw(ch.value === this.sel.pattern));
+    this.blessChips.forEach(ch => ch.redraw(ch.value === this.sel.bless));
   }
-  stamp(x, y) {
-    const R = 24;
-    let gained = 0;
-    this.pts.forEach(pt => { if (!pt.hit && (pt.x - x) ** 2 + (pt.y - y) ** 2 < R * R) { pt.hit = true; gained++; } });
-    if (gained && this.rt) {
-      const lx = x - this.patX + (this.patSize + 40) / 2, ly = y - this.patY + (this.patSize + 40) / 2;
-      if (!this.brush) { this.brush = this.make.graphics({ add: false }); this.brush.fillStyle(0xffffff, 1); this.brush.fillCircle(0, 0, R + 4); }
-      this.rt.draw(this.brush, lx, ly);
-    }
-    if (gained) {
-      this.hits += gained; this.updateProg();
-      if (Math.random() < 0.3) { const s = this.add.image(x, y, 'spark').setTint(C.magenta).setScale(0.5).setDepth(30); this.tweens.add({ targets: s, alpha: 0, scale: 0.1, duration: 400, onComplete: () => s.destroy() }); }
-      if (this.hits / this.pts.length >= 0.8) this.completePattern();
-    }
+  applyPattern(kind) {
+    G.lampPattern = kind;
+    if (this.patImg) { this.patImg.destroy(); this.patImg = null; }
+    this.patImg = this.add.image(this.LX, this.LY - 14, 'pattern_' + kind).setScale(0.4).setAlpha(0).setTint(0xd84545).setDepth(3);
+    this.tweens.add({ targets: this.patImg, alpha: 0.85, duration: 500 });
+    SFX.light();
   }
-  updateProg() {
-    const f = this.pts.length ? this.hits / this.pts.length : 0;
-    if (!this.rt) this.full.setAlpha(f);
-    const g = this.progG; g.clear();
-    g.fillStyle(0xd8d0e0, 1); g.fillRoundedRect(58, 380, 240, 18, 9);
-    g.fillStyle(C.magenta, 1); if (f > 0) g.fillRoundedRect(58, 380, Math.max(18, 240 * Math.min(1, f / 0.8)), 18, 9);
-    this.progT.setText(`${this.stage === 'tiger' ? '虎纹' : '龙纹'}完成度 ${Math.min(100, Math.round(f / 0.8 * 100))}%`);
+  applyBlessing(word) {
+    G.blessingText = word;
+    if (this.charObjs) this.charObjs.forEach(t => t.destroy());
+    this.charObjs = wishBlessingChars(this, this.lamp.c, word, 1.06, true).map(t => { t.setDepth(4); return t; });
+    SFX.page();
   }
-  clearCurrent() {
-    if (this.done || this.stage === 'bless') { toast(this, '已完成的纹样会保留'); return; }
-    this.pts.forEach(p => p.hit = false); this.hits = 0;
-    if (this.rt) this.rt.clear();
-    this.updateProg();
-  }
-  completePattern() {
-    if (this.done) return; this.done = true; this.drawing = false;
-    SFX.ok();
-    if (this.rt) { this.full.clearMask(true); }
-    this.full.setAlpha(1);
-    sparkle(this, this.patX, this.patY, C.magenta, 26, 60);
-    const kind = this.stage, faint = this.faint, full = this.full;
-    faint.destroy();
-    const tx = this.LX + (kind === 'dragon' ? -74 : 74), ty = this.LY - 50;
-    this.tweens.add({ targets: full, x: tx, y: ty, scale: 0.4, duration: 700, delay: 400, ease: 'Cubic.inOut' });
-    if (kind === 'dragon') { G.dragonDone = true; this.dragonImg = full; }
-    else { G.tigerDone = true; this.tigerImg = full; }
-    this.time.delayedCall(1200, () => {
-      if (kind === 'dragon') { toast(this, '龙纹完成！接着描虎纹'); this.startPattern('tiger'); }
-      else this.toBlessing();
+  confirm() {
+    if (!this.sel.bless) { toast(this, '先在下面选一句祝福文字', { y: 520 }); return; }
+    if (this.done) return; this.done = true;
+    SFX.ok(); sparkle(this, this.LX, this.LY, 0xffd040, 26, 80);
+    this.tweens.add({ targets: this.lamp.c, scale: 1.04, yoyo: true, duration: 220, repeat: 1 });
+    this.time.delayedCall(1300, () => {
+      dialog(this, [
+        { who: 'tiger', text: '纹样有了，祝福也落了笔——这盏灯，这下真的属于你了。' },
+        { who: 'dragon', text: '走，去老街上看看。灯成了，手艺还在一双手一双手里传下去。' }
+      ], () => goTo(this, 'Ending'));
     });
   }
-  toBlessing() {
-    this.stage = 'bless'; this.refreshSteps();
-    this.hud.setObjective('为灯题一句吉语（点击可替换）');
-    this.progT.setText('龙纹、虎纹都已完成'); this.clearB.setEnabled(false);
-    this.rpHint.setVisible(false);
-    this.bBtns.forEach((b, i) => { b.setVisible(true).setScale(0); this.tweens.add({ targets: b, scale: 1, duration: 300, delay: i * 120, ease: 'Back.out' }); });
-    this.doneB.setVisible(true).setEnabled(false);
-    this.rp.add(T(this, 1156, 480, '只能保留一句，\n再点其他吉语即可替换', 15, '#6a6a7a', { sans: true, align: 'center' }));
-  }
-  pickBlessing(b) {
-    G.blessingId = b.id;
-    this.blessText.setText(b.text).setScale(0.5).setAlpha(0);
-    this.tweens.add({ targets: this.blessText, scale: 1, alpha: 1, duration: 300, ease: 'Back.out' });
-    this.bBtns.forEach((btn, i) => btn.setAlpha(BLESSINGS[i].id === b.id ? 1 : 0.55));
-    this.doneB.setEnabled(true);
-    this.stepT[3].setColor('#e8007a').setFontStyle('bold');
-    this.hud.setObjective('满意了就点击“完成这盏灯”');
-  }
-  finish() {
-    if (!G.blessingId) { toast(this, '先选一句吉语'); return; }
-    if (this.finished) return; this.finished = true;
-    SFX.ok(); sparkle(this, this.LX, this.LY, C.yellow, 30);
-    goTo(this, 'Ending');
-  }
-  dlgOpen() { return this.children.list.some(o => o.depth === 1200); }
 }

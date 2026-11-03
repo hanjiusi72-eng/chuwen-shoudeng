@@ -14,6 +14,9 @@ function mountJourney(scene, html, className) {
   };
   sound.addEventListener('click', () => { BGM.ensure(); AUDIO.toggleMuted(); updateSound(); });
   updateSound(); el.appendChild(sound);
+  if (!window.__OFFLINE_ASSETS) {
+    const download = document.createElement('a'); download.className = 'package-link'; download.href = 'download.html'; download.textContent = '下载离线版'; el.appendChild(download);
+  }
   scene.events.once('shutdown', () => el.remove());
   return el;
 }
@@ -25,16 +28,12 @@ function journeyDelay(scene, fn, ms) {
 }
 
 class PrologueScene extends Phaser.Scene {
-  constructor() { super('Prologue'); }
+  constructor(key = 'Prologue') { super(key); }
   create() {
     fadeIn(this); BGM.setMode('festive');
     this.add.image(W / 2, H / 2, 'bg_pattern').setDisplaySize(W, H);
     this.page = 0; this.changing = false;
-    this.pages = [
-      ['一盏龙虎灯，寄着一家的平安。', '同安老街，竹篾为骨，纸上绘龙虎。\n一盏灯，把世代相传的心意轻轻点亮。'],
-      ['灯火未亮时，先有一缕药香。', '暑气未退，村子里有人在等一锅汤药。\n背起药囊，随保生大帝吴夲走一趟山路。'],
-      ['守住一盏灯，也是守住一个人。', '入山采药，结识龙虎；扎灯守夜，盼到天明。\n故事的最后，为自己的灯落下一句心愿。']
-    ];
+    this.pages = PROLOGUE_PAGES.map(([a, b]) => [a, b]);
     this.el = mountJourney(this, `<button class="quiet skip" type="button">跳过序言 →</button><div class="intro-content"><p class="eyebrow">光亮 · 龙虎灯</p><div class="intro-copy"><h1></h1><p class="verse"></p></div><button class="primary continue" type="button">翻开故事 →</button><p class="progress" aria-live="polite"></p></div><p class="footer">竹篾为骨 · 纸上生光 · 灯火相传</p>`, 'intro');
     this.el.querySelector('.skip').onclick = () => this.begin();
     this.el.querySelector('.continue').onclick = () => this.advance();
@@ -43,13 +42,13 @@ class PrologueScene extends Phaser.Scene {
   showPage() {
     this.el.querySelector('h1').textContent = this.pages[this.page][0];
     this.el.querySelector('.verse').textContent = this.pages[this.page][1];
-    this.el.querySelector('.progress').textContent = `0${this.page + 1} / 03`;
-    this.el.querySelector('.continue').textContent = this.page === 2 ? '背起药囊，入山去 →' : '继续 →';
+    this.el.querySelector('.progress').textContent = `0${this.page + 1} / 0${this.pages.length}`;
+    this.el.querySelector('.continue').textContent = this.page === this.pages.length - 1 ? '背起药囊，入山去 →' : '继续 →';
   }
   advance() {
     if (this.changing || this._leaving) return;
     BGM.ensure();
-    if (this.page === 2) return this.begin();
+    if (this.page === this.pages.length - 1) return this.begin();
     this.changing = true;
     const copy = this.el.querySelector('.intro-copy'); copy.classList.add('changing');
     journeyDelay(this, () => {
@@ -60,7 +59,7 @@ class PrologueScene extends Phaser.Scene {
     if (this._leaving) return;
     this.el.classList.remove('is-visible');
     this.el.style.pointerEvents = 'none';
-    journeyDelay(this, () => goTo(this, 'Forage'), 650);
+    journeyDelay(this, () => goTo(this, 'Story', { id: 'prologue' }), 650);
   }
 }
 
@@ -122,10 +121,10 @@ class WorkshopScene extends Phaser.Scene {
     const host = this.el.querySelector('.lantern-stage');
     try {
       const T3 = window.THREE; if (!T3) throw Error('3D runtime unavailable');
-      this.renderer = new T3.WebGLRenderer({ alpha: true, antialias: true, preserveDrawingBuffer: true });
-      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.6));
-      this.renderer.outputColorSpace = T3.SRGBColorSpace;
-      this.renderer.setClearColor(0x000000, 0);
+      this.lanternRenderer = new T3.WebGLRenderer({ alpha: true, antialias: true, preserveDrawingBuffer: true });
+      this.lanternRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.6));
+      this.lanternRenderer.outputColorSpace = T3.SRGBColorSpace;
+      this.lanternRenderer.setClearColor(0x000000, 0);
       this.world = new T3.Scene(); this.camera3 = new T3.PerspectiveCamera(33, 1, .1, 50); this.camera3.position.set(0, .0, 8.6);
       this.world.add(new T3.AmbientLight(0xf6edcf, 1.6));
       const key = new T3.DirectionalLight(0xffefd2, 2.3); key.position.set(-3, 4, 5); this.world.add(key);
@@ -139,7 +138,7 @@ class WorkshopScene extends Phaser.Scene {
         points.push(new T3.Vector2(r, y));
       }
       this.paperTexture = new T3.CanvasTexture(this.paper); this.paperTexture.colorSpace = T3.SRGBColorSpace;
-      this.paperTexture.anisotropy = Math.min(4, this.renderer.capabilities.getMaxAnisotropy());
+      this.paperTexture.anisotropy = Math.min(4, this.lanternRenderer.capabilities.getMaxAnisotropy());
       this.paperMaterial = new T3.MeshStandardMaterial({ map: this.paperTexture, roughness: 1, side: T3.DoubleSide, emissive: 0xffd37b, emissiveIntensity: 0 });
       this.bodyMesh = new T3.Mesh(new T3.LatheGeometry(points, 96), this.paperMaterial); this.group.add(this.bodyMesh);
       const bamboo = new T3.MeshStandardMaterial({ color: 0x61704a, roughness: .8 });
@@ -158,15 +157,15 @@ class WorkshopScene extends Phaser.Scene {
       }
       this.group.add(tassel); this.tassel = tassel;
       this.ray = new T3.Raycaster(); this.pointer3 = new T3.Vector2();
-      host.appendChild(this.renderer.domElement);
+      host.appendChild(this.lanternRenderer.domElement);
     } catch (e) {
-      this.renderer?.dispose(); this.renderer = null;
+      this.lanternRenderer?.dispose(); this.lanternRenderer = null;
       this.fallback = document.createElement('canvas'); host.appendChild(this.fallback);
       this.el.querySelector('.status').textContent = '当前设备使用平面纸灯模式，绘纹、题字和保存仍可使用。';
     }
     this.resizeLantern = () => {
       const r = host.getBoundingClientRect();
-      if (this.renderer) { this.renderer.setSize(r.width, r.height); this.camera3.aspect = r.width / r.height; this.camera3.updateProjectionMatrix(); }
+      if (this.lanternRenderer) { this.lanternRenderer.setSize(r.width, r.height); this.camera3.aspect = r.width / r.height; this.camera3.updateProjectionMatrix(); }
       else { this.fallback.width = Math.round(r.width * 1.5); this.fallback.height = Math.round(r.height * 1.5); }
     };
     this.observer = new ResizeObserver(this.resizeLantern); this.observer.observe(host); this.resizeLantern();
@@ -176,12 +175,12 @@ class WorkshopScene extends Phaser.Scene {
       this.raf = requestAnimationFrame(animate);
       if (now - this.lastFrame < 32 || document.hidden || !this.sys.isActive()) return;
       this.lastFrame = now;
-      if (this.renderer) {
+      if (this.lanternRenderer) {
         this.group.rotation.y = Math.PI + this.turn;
         this.group.rotation.z = Math.sin(now * .00055) * .018;
         this.group.position.y = Math.sin(now * .0007) * .026 + .12;
         this.tassel.rotation.z = Math.sin(now * .0008) * .027;
-        this.renderer.render(this.world, this.camera3);
+        this.lanternRenderer.render(this.world, this.camera3);
       } else this.renderFlat();
     };
     this.raf = requestAnimationFrame(animate);
@@ -198,9 +197,9 @@ class WorkshopScene extends Phaser.Scene {
     for (let i = -30; i <= 30; i++) { c.beginPath(); c.moveTo(x + i * rw / 65, y + rh + 7); c.lineTo(x + i * rw / 50, y + rh + h * .14); c.stroke(); }
   }
   uvAt(event) {
-    const canvas = this.renderer?.domElement || this.fallback, r = canvas.getBoundingClientRect();
+    const canvas = this.lanternRenderer?.domElement || this.fallback, r = canvas.getBoundingClientRect();
     const x = (event.clientX - r.left) / r.width, y = (event.clientY - r.top) / r.height;
-    if (this.renderer) {
+    if (this.lanternRenderer) {
       this.pointer3.set(x * 2 - 1, 1 - y * 2); this.ray.setFromCamera(this.pointer3, this.camera3);
       const hit = this.ray.intersectObject(this.bodyMesh)[0];
       return hit ? { x: hit.uv.x * 2048, y: (1 - hit.uv.y) * 1024 } : null;
@@ -225,7 +224,7 @@ class WorkshopScene extends Phaser.Scene {
     });
     const end = () => { down = false; lastUV = null; };
     ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(ev => host.addEventListener(ev, end));
-    const canvas = this.renderer?.domElement || this.fallback; canvas.tabIndex = 0; canvas.setAttribute('aria-label', '灯笼；左右方向键旋转');
+    const canvas = this.lanternRenderer?.domElement || this.fallback; canvas.tabIndex = 0; canvas.setAttribute('aria-label', '灯笼；左右方向键旋转');
     canvas.addEventListener('keydown', e => { if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); this.turn += e.key === 'ArrowLeft' ? -.18 : .18; } });
   }
   stroke(from, to) {
@@ -249,7 +248,7 @@ class WorkshopScene extends Phaser.Scene {
       ['从故事，走进灯坊', '村巷里的守灯故事，到了天明告一段落。今日同安的灯坊里，匠人仍以一根竹篾、一张棉纸，将灯做成。现在，轮到你为它添彩。'],
       ['一笔龙虎，一纸心意', '龙虎是守护，也是祝愿。选一幅传统纹样落在灯面，或换上画笔留下自己的线条。拖动旋转，看纸面与竹骨如何相依。'],
       ['把牵挂，写进灯里', '想起一个人、一户人家，或一个小小的愿望。为这盏灯写下八个字以内的心愿，让它随灯火一起留下。'],
-      ['灯已成，手艺仍在继续', '从采药救人，到守灯护村，一盏灯把人与人连在一起。龙虎护平安，灯火记人情。愿这份手上的温度，在每一次点亮时继续传下去。']
+      ['灯火相传，岁岁常安', '从采药救人，到守灯护村，一盏灯把人与人连在一起。龙虎护平安，灯火记人情。愿这份手上的温度，在每一次点亮时继续传下去。']
     ][this.step];
     this.el.querySelector('.number').textContent = `0${this.step + 1} / 04`;
     this.el.querySelector('h2').textContent = copy[0]; this.el.querySelector('.body-copy').textContent = copy[1];
@@ -291,11 +290,11 @@ class WorkshopScene extends Phaser.Scene {
   }
   saveLamp() {
     try {
-      if (this.renderer) this.renderer.render(this.world, this.camera3); else this.renderFlat();
+      if (this.lanternRenderer) this.lanternRenderer.render(this.world, this.camera3); else this.renderFlat();
       const out = document.createElement('canvas'); out.width = 1600; out.height = 1200;
       const c = out.getContext('2d'), gradient = c.createRadialGradient(800, 500, 20, 800, 500, 850);
       gradient.addColorStop(0, '#343527'); gradient.addColorStop(1, '#10130f'); c.fillStyle = gradient; c.fillRect(0, 0, 1600, 1200);
-      const source = this.renderer?.domElement || this.fallback, h = 920, w = source.width / source.height * h;
+      const source = this.lanternRenderer?.domElement || this.fallback, h = 920, w = source.width / source.height * h;
       c.drawImage(source, 800 - w / 2, 55, w, h); c.textAlign = 'center'; c.fillStyle = '#ead7a3';
       c.font = '42px "Songti SC", serif'; c.fillText('「' + (this.wish || '平安顺遂') + '」', 800, 1050);
       c.font = '19px "Songti SC", serif'; c.fillStyle = '#afa78c'; c.fillText('光亮 · 龙虎灯    一盏灯，照见人间', 800, 1112);
@@ -310,6 +309,6 @@ class WorkshopScene extends Phaser.Scene {
       this.world.traverse(o => { o.geometry?.dispose(); if (o.material) materials.add(o.material); });
       materials.forEach(m => m.dispose());
     }
-    this.paperTexture?.dispose(); this.renderer?.dispose(); this.renderer?.forceContextLoss();
+    this.paperTexture?.dispose(); this.lanternRenderer?.dispose(); this.lanternRenderer?.forceContextLoss();
   }
 }

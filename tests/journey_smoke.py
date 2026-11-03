@@ -17,14 +17,14 @@ with sync_playwright() as p:
  # Click the actual start button in Phaser's fitted canvas.
  def click_game(x,y):
   r=page.locator('#game canvas').bounding_box();page.mouse.click(r['x']+x*r['width']/1334,r['y']+y*r['height']/750)
- click_game(667,488);page.wait_for_function('game.scene.isActive("Prologue")')
  page.wait_for_timeout(1100)
- assert page.locator('.intro h1').inner_text().startswith('一盏龙虎灯')
- for n in (1,2):
-  page.locator('.continue').click();page.wait_for_function('(n)=>game.scene.getScene("Prologue").page===n && !game.scene.getScene("Prologue").changing',arg=n)
- assert '守住' in page.locator('.intro h1').inner_text()
- page.screenshot(path=str(OUT/'intro.png'));passed('真实点击进入三页粉色纹样序言')
- page.locator('.continue').click();page.wait_for_function('game.scene.isActive("Forage")');page.wait_for_timeout(1200)
+ assert page.locator('.intro h1').inner_text().startswith('同安老街')
+ for n in (1,2,3):
+  page.locator('.continue').click();page.wait_for_function('(n)=>game.scene.getScene("Title").page===n && !game.scene.getScene("Title").changing',arg=n)
+ assert '晨雾' in page.locator('.intro h1').inner_text()
+ page.screenshot(path=str(OUT/'intro.png'));passed('四段远端序言文案在粉色纹样上连续翻页')
+ page.locator('.continue').click();page.wait_for_function('game.scene.isActive("Story")');page.wait_for_timeout(1200)
+ click_game(1224,36);page.wait_for_function('game.scene.isActive("Forage")');page.wait_for_timeout(1200)
  assert page.locator('.intro').count()==0 and page.evaluate('!SceneBlend.active')
  passed('序言在同页叠化接入采药，转场遮罩自动清理')
  click_game(1220,668);page.wait_for_function('G.foragePos>0 && !game.scene.getScene("Forage").walking',timeout=30000)
@@ -33,7 +33,7 @@ with sync_playwright() as p:
  passed('龙虎赠灯直连制药，天明直连同页灯坊')
  page.evaluate('window.__musicContext=AUDIO.ctx();window.__musicStart=BGM.snapshot.step;window.__meter=AUDIO.ctx().createAnalyser();AUDIO.music().connect(__meter)')
  page.evaluate('goTo(game.scene.getScene("Forage"),"Workshop")');page.wait_for_function('game.scene.isActive("Workshop")');page.wait_for_timeout(1600)
- assert page.evaluate('!!game.scene.getScene("Workshop").renderer')
+ assert page.evaluate('!!game.scene.getScene("Workshop").lanternRenderer')
  page.screenshot(path=str(OUT/'workshop.png'));passed('同页进入实时 WebGL 纸灯，灯坊背景及本地素材加载成功')
  stage=page.locator('.lantern-stage');r=stage.bounding_box();x=r['x']+r['width']*.5;y=r['y']+r['height']*.48
  before=page.evaluate('game.scene.getScene("Workshop").turn')
@@ -76,7 +76,7 @@ with sync_playwright() as p:
  assert page.locator('.workshop').count()==0
  assert page.evaluate('game.scene.getScene("Workshop").disposed')
  page.evaluate('goTo(game.scene.getScene("Title"),"Workshop")');page.wait_for_function('game.scene.isActive("Workshop")');page.wait_for_timeout(1100)
- assert page.locator('.workshop').count()==1 and page.evaluate('!!game.scene.getScene("Workshop").renderer')
+ assert page.locator('.workshop').count()==1 and page.evaluate('!!game.scene.getScene("Workshop").lanternRenderer')
  passed('退出释放渲染器和事件，重新进入不叠加灯坊或音轨')
  # Touch in the same landscape layout used by the game.
  mobile=browser.new_context(viewport={'width':844,'height':390},is_mobile=True,has_touch=True)

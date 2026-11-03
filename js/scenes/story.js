@@ -20,15 +20,14 @@ const STORIES = {
     shots: [
       // 与修订稿一致：满幅粉红几何纹样，保生大帝居中近景。
       { bg: 'bg_pattern', build(s) { actor(s, 'char_baosheng', W / 2, H, H, 'up'); },
-        lines: [{ who: 'narr', text: '闽南白礁，有位医者叫吴夲。他一生悬壶行医、救人无数，人们尊称他——“保生大帝”。' },
-                { who: 'wu', text: '徒儿，你看村里屋檐下的灯，都暗了。暑气不退，病气却一家一家地传……' },
+        lines: [{ who: 'wu', text: '徒儿，你看村里屋檐下的灯，都暗了。暑气不退，病气却一家一家地传……' },
                 { who: 'wu', text: '药庐里的存药快见底了。备好药囊，随我上山采药去。听说山路不太平，路上多留心。' }] },
       // 保留原画的亮黄地面与蓝黄格纹，不再叠加暗色蒙版。
       { bg: 'bg_village',
         lines: [{ who: 'narr', text: '山下的村子，家家闭户。老人们在门后咳嗽，孩子们烧得小脸通红，都在等一锅热热的汤药。' },
                 { who: 'me', text: '师父，咱们快些走！' }] }
     ],
-    next: ['Act', { act: 1 }]
+    next: ['Forage']
   },
   A: {
     title: '剧情 A · 龙虎随行',
@@ -137,7 +136,7 @@ const STORIES = {
         lines: [{ who: 'narr', text: '入夜，风变了调。瘟神带着疫鬼进村，阴风所过，灯火一盏盏发抖……' },
                 { who: 'tiger', text: '别怕！守住灯，就是守住家。我们陪你守到天明！' }] }
     ],
-    next: ['Act', { act: 3 }]
+    next: ['Defense']
   },
   D: {
     title: '剧情 D · 天明',
@@ -166,10 +165,11 @@ const STORIES = {
 /* 镜头管理：切镜时终止上一镜所有补间与定时器，并清理其对象（包括回调里后生成的对象） */
 function shotDirector(scene) {
   const persist = new Set(scene.children.list), events = [];
-  const add = scene.time.addEvent.bind(scene.time);
-  scene.time.addEvent = cfg => { const e = add(cfg); events.push(e); return e; };
+  const originalAdd = scene.time.addEvent;
+  const trackedAdd = cfg => { const e = originalAdd.call(scene.time, cfg); events.push(e); return e; };
+  scene.time.addEvent = trackedAdd;
   let busy = false, first = true, serial = 0, alive = true;
-  scene.events.once('shutdown', () => { alive = false; });
+  scene.events.once('shutdown', () => { alive = false; if (scene.time.addEvent === trackedAdd) scene.time.addEvent = originalAdd; });
   const killDeep = o => { scene.tweens.killTweensOf(o); if (o.list) o.list.forEach(killDeep); };
   const clean = () => scene.children.list.filter(o => !persist.has(o) && o.depth < 1100).forEach(o => { killDeep(o); o.destroy(); });
   return {

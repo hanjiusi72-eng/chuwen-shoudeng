@@ -10,3 +10,8 @@
 @media(prefers-reduced-motion:reduce){.journey,.intro-copy{transition:none!important}}
 
 .download-link{position:fixed;left:22px;bottom:20px;z-index:6;font:12px sans-serif;letter-spacing:.1em;color:#fff0cebb;text-decoration:none;padding:8px;border-bottom:1px solid #fff0ce44}.download-link:hover{color:#fff0ce}
+
+.intro .chapters{position:absolute;left:30px;top:25px;z-index:2}.intro .direct-lamp{position:absolute;left:28px;bottom:24px;z-index:2}.intro .verse{min-height:3.6em}.intro h1{font-size:clamp(23px,2.8vw,40px)}
+@media(max-height:570px){.intro .direct-lamp{bottom:14px;left:16px;font-size:11px}.intro .chapters{top:14px;left:16px}.intro .skip{top:14px;right:16px}.intro .footer{font-size:9px}.intro h1{font-size:24px}.intro .verse{min-height:2.5em;margin-bottom:15px}}
+
+.journey .package-link{position:absolute;top:35px;right:180px;z-index:5;font:12px sans-serif;letter-spacing:.1em;color:#cbbf9e;text-decoration:none;opacity:.8}.journey .package-link:hover{opacity:1}@media(max-height:570px){.journey .package-link{top:24px;right:145px;font-size:10px}}
