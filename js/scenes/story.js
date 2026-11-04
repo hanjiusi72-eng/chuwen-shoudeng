@@ -39,23 +39,6 @@ const STORIES = {
         lines: [{ who: 'tiger', text: '小学徒，你的药真灵！这份情，白额虎记下了——山下村子有难，我们随你下山！' },
                 { who: 'dragon', text: '一路同行，恩义在心。村里等药的人还多，咱们把山上的草药，先送回药庐。' }] },
       { bg: 'bg_pattern', build(s) {
-          s.add.rectangle(W / 2, H / 2, W, H, 0x14164a, 0.55);
-          panel(s, 90, 90, 500, 400, { fill: C.cream, stroke: C.magenta, lw: 5 });
-          T(s, 340, 124, '药 书', 24, '#9a0078', { bold: true });
-          const b = s.add.image(340, 300, 'book_slips').setScale(0.44).setAlpha(0); s.tweens.add({ targets: b, alpha: 1, duration: 600 });
-          VT(s, 340 + 190, 175, '舒喉化骨汤', 24, '#1a0a30', { oy: 0, bold: true });
-          panel(s, 640, 90, 600, 400, { fill: C.cream, stroke: C.blue, lw: 5 });
-          T(s, 940, 124, '随 行 物 件', 24, '#004dfc', { bold: true });
-          [['herb_huoxiang', '草药', 0.5], ['bamboo', '竹篾', 1.3], ['paperstack', '棉纸', 1.2], ['jar', '灯油灯芯', 1.2]].forEach(([k, n, sc], i) => {
-            const x = 720 + i * 147, y = 290;
-            const im = s.add.image(x, y, k).setScale(sc).setAlpha(0);
-            const t = T(s, x, y + 80, n, 20, '#2a1030', { bold: true }).setAlpha(0);
-            s.tweens.add({ targets: [im, t], alpha: 1, duration: 500, delay: 400 + i * 250 });
-          });
-        },
-        lines: [{ who: 'dragon', text: '这本药书你收好——方子都在里面，照着配，不会错。' },
-                { who: 'tiger', text: '草药已齐，竹篾、棉纸、灯油也都备下了。先把药煎好，村里的人还等着呢。' }] },
-      { bg: 'bg_pattern', build(s) {
           const glow = s.add.image(W / 2, 330, 'glow').setScale(2.2).setTint(0xfff3b0).setAlpha(0);
           const l = s.add.image(W / 2, 330, 'lantern_white').setScale(1.6).setAlpha(0);
           s.tweens.add({ targets: [l, glow], alpha: 1, duration: 800 });
@@ -102,16 +85,6 @@ const STORIES = {
     title: '剧情 C · 千灯初上',
     apply() { G.lampCrafted = true; },
     shots: [
-      { bg: 'bg_pattern', build(s) {
-          const main = s.add.image(W / 2, 300, 'lantern_white').setScale(1.4);
-          for (let i = 0; i < 10; i++) {
-            const x = 140 + (i % 5) * 262, y = i < 5 ? 150 : 520;
-            const l = s.add.image(x, y, 'lantern_white').setScale(0).setAngle(Phaser.Math.Between(-8, 8));
-            s.tweens.add({ targets: l, scale: 0.7, duration: 400, delay: 600 + i * 260, ease: 'Back.out' });
-          }
-          s.tweens.add({ targets: main, angle: { from: -3, to: 3 }, yoyo: true, repeat: -1, duration: 1200 });
-        },
-        lines: [{ who: 'narr', text: '样灯摆上桌，木匠的嗓子亮了：“照这个样子扎！”竹篾声、糊纸声，一刻也没停。' }] },
       { bg: 'bg_village', build(s) {
           VILLAGE_LAMPS.forEach((p, i) => {
             const gl = s.add.image(p.x, p.y, 'glow').setTint(0xffd040).setScale(0).setAlpha(0.7);

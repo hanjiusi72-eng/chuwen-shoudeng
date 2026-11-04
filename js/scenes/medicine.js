@@ -83,7 +83,8 @@ class MedicineScene extends Phaser.Scene {
     this.fanFx.setOrigin(0.1, 0.5);
     // 捣药罐（中下）
     this.mortarBack = this.add.image(800, 592, 'tool_mortar_back').setDisplaySize(260, 250);
-    this.pestle = this.add.image(818, 490, 'tool_pestle').setDisplaySize(66, 100).setOrigin(0.5, 0.85).setAngle(-14);
+    // 大杵斜插碗里（参考稿：杵粗、斜靠罐口，尾端高高翘起）
+    this.pestle = this.add.image(782, 452, 'tool_pestle').setDisplaySize(96, 265).setOrigin(0.5, 0.92).setAngle(-30);
     this.mortarFront = this.add.image(800, 592, 'tool_mortar_front').setDisplaySize(260, 250);
     this.mortarZone = new Phaser.Geom.Rectangle(660, 450, 290, 290);
     this.mortarHi = this.add.graphics();
@@ -238,8 +239,8 @@ class MedicineScene extends Phaser.Scene {
     this.busy = true; this.fxPhase = 'grinding';
     this.setForgeStatus(''); this.setForgeHint('药味已齐——捣药！');
     SFX.grind();
-    this.tweens.add({ targets: this.pestle, angle: { from: -30, to: 14 }, y: 520, duration: 200, yoyo: true, repeat: 7, ease: 'Quad.inOut',
-      onComplete: () => { this.pestle.setAngle(-14); this.pestle.y = 490; } });
+    this.tweens.add({ targets: this.pestle, angle: { from: -44, to: -14 }, duration: 200, yoyo: true, repeat: 7, ease: 'Quad.inOut',
+      onComplete: () => { this.pestle.setAngle(-30); } });
     const g = this.time.addEvent({ delay: 300, repeat: 5, callback: () => SFX.grind() });
     this.time.delayedCall(2000, () => {
       g.remove();

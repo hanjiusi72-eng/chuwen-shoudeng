@@ -33,19 +33,19 @@ class ForageScene extends Phaser.Scene {
     bg.setTileScale(136 / 300, 236 / 520);
     // 给棋盘四周留出参考稿中的三角纹样边框，15 格始终完整可见。
     this.add.image(695, 367, 'forage_base').setDisplaySize(1104, 642);
-    this.add.image(W / 2 * 0.94 + FORAGE_DX, H / 2 * 0.94 + FORAGE_DY, 'forage_cells').setDisplaySize(W * 0.94, H * 0.94);
 
-    // 蛇形山路（粉色路线，与棋盘格同心）
+    // 蛇形山路（粉色路线）：画在棋盘格图的下层，穿过格子的部分被格子遮住，只在格间露出
     const rt = this.add.graphics();
     const yT = cellPos(0).y, yM = cellPos(5).y, yB = cellPos(10).y;
     const xL = cellPos(0).x, xR = cellPos(4).x, cR = 1370 * FORAGE_SX + FORAGE_DX, cL = 70 * FORAGE_SX + FORAGE_DX;
     const cubic = (p0, c1, c2, p1) => { rt.beginPath(); rt.moveTo(p0.x, p0.y); for (let i = 1; i <= 26; i++) { const t = i / 26, u = 1 - t; rt.lineTo(u ** 3 * p0.x + 3 * u * u * t * c1.x + 3 * u * t * t * c2.x + t ** 3 * p1.x, u ** 3 * p0.y + 3 * u * u * t * c1.y + 3 * u * t * t * c2.y + t ** 3 * p1.y); } rt.strokePath(); };
-    rt.lineStyle(8, 0xff39b5, 0.95);
+    rt.lineStyle(7, 0xff39b5, 0.95);
     rt.beginPath(); rt.moveTo(xL, yT); rt.lineTo(xR, yT); rt.strokePath();
     rt.beginPath(); rt.moveTo(xR, yM); rt.lineTo(xL, yM); rt.strokePath();
     rt.beginPath(); rt.moveTo(xL, yB); rt.lineTo(xR, yB); rt.strokePath();
     cubic({ x: xR, y: yT }, { x: cR, y: yT }, { x: cR, y: yM }, { x: xR, y: yM });
     cubic({ x: xL, y: yM }, { x: cL, y: yM }, { x: cL, y: yB }, { x: xL, y: yB });
+    this.add.image(W / 2 * 0.94 + FORAGE_DX, H / 2 * 0.94 + FORAGE_DY, 'forage_cells').setDisplaySize(W * 0.94, H * 0.94);
 
     // 格子内容
     Object.entries(FORAGE_HERB_AT).forEach(([n, id]) => {

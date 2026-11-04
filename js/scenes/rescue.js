@@ -194,13 +194,41 @@ function openTigerRescue(scene, onDone) {
   });
 }
 
-/* ============ 交互 1B · 神龙求医 ============ */
+/* 素材 pattern_dragon 的眼睛框是透明镂空（像戴了眼罩）。生成“无框”版：镂空处填卡片底色，并按参考稿补上粉色圆眼 */
+function makeCleanDragon(scene) {
+  if (scene.textures.exists('pattern_dragon_clean')) return;
+  const src = scene.textures.get('pattern_dragon').getSourceImage();
+  const ct = scene.textures.createCanvas('pattern_dragon_clean', src.width, src.height);
+  const ctx = ct.getContext();
+  ctx.drawImage(src, 0, 0);
+  const fill = (x0, y0, x1, y1) => {
+    const r = 24;
+    ctx.fillStyle = '#f7f3e8';
+    ctx.beginPath();
+    ctx.moveTo(x0 + r, y0);
+    ctx.arcTo(x1, y0, x1, y1, r); ctx.arcTo(x1, y1, x0, y1, r);
+    ctx.arcTo(x0, y1, x0, y0, r); ctx.arcTo(x0, y0, x1, y0, r);
+    ctx.closePath(); ctx.fill();
+  };
+  fill(2, 105, 158, 236);
+  fill(195, 105, 348, 236);
+  const eye = (ex, ey) => {
+    ctx.fillStyle = '#ff2aa8';
+    ctx.beginPath(); ctx.arc(ex, ey, 23, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.beginPath(); ctx.arc(ex - 7, ey - 8, 6, 0, Math.PI * 2); ctx.fill();
+  };
+  eye(82, 168); eye(271, 168);
+  ct.refresh();
+}
+
 function openDragonRescue(scene, onDone) {
   rescueTextures(scene);
+  makeCleanDragon(scene);
   const ov = rescueCard(scene, '神龙求医', '神龙双目不清，前来请大帝相助。');
   const { cx, cy } = ov;
   const artX = cx - 210, artY = cy + 40;
-  const dragon = scene.add.image(artX, artY, 'pattern_dragon').setDepth(1505);
+  const dragon = scene.add.image(artX, artY, 'pattern_dragon_clean').setDepth(1505);
   const ds = 320 / Math.max(dragon.width, dragon.height);
   dragon.setScale(ds);
   ov.c.add(dragon);
@@ -247,7 +275,7 @@ function openDragonRescue(scene, onDone) {
   const makePatches = () => {
     allIn = true;
     ov.setHint('将药贴拖给神龙。');
-    const eyeOff = [[-83, 13], [83, 13]];
+    const eyeOff = [[-84, -7], [88, -7]];
     eyeOff.forEach(([ex, ey], k) => {
       const z = scene.add.circle(artX + ex, artY + ey, 20, 0xffe62a, 0).setStrokeStyle(3, 0xffe62a, 0.9).setDepth(1507);
       scene.tweens.add({ targets: z, scale: 1.25, alpha: 0.5, yoyo: true, repeat: -1, duration: 450, delay: k * 220 });
@@ -255,7 +283,7 @@ function openDragonRescue(scene, onDone) {
       eyes.push({ x: artX + ex, y: artY + ey, z, filled: false });
     });
     [0, 1].forEach(k => {
-      const pg = scene.add.image(cx + 110 + k * 120, cy + 200, 'rz_patch').setDepth(1508).setScale(0.9);
+      const pg = scene.add.image(cx + 128 + k * 92, artY - 7, 'rz_patch').setDepth(1508).setScale(0.72);
       pg.rz = true; pg.isPatch = true; pg.homeX = pg.x; pg.homeY = pg.y;
       pg.homeX = pg.x; pg.homeY = pg.y;
       rescueBindMove(scene);
@@ -288,7 +316,7 @@ function openDragonRescue(scene, onDone) {
       hitEye.filled = true; patchDone++;
       o.disableInteractive();
       hitEye.z.destroy();
-      scene.tweens.add({ targets: o, x: hitEye.x, y: hitEye.y, scale: 0.55, duration: 300, ease: 'Quad.out' });
+      scene.tweens.add({ targets: o, x: hitEye.x, y: hitEye.y, scale: 0.62, duration: 300, ease: 'Quad.out' });
       SFX.light(); sparkle(scene, hitEye.x, hitEye.y, 0xffe62a, 10, 1511);
       if (patchDone >= 2) {
         scene.time.delayedCall(500, () => {
